@@ -480,6 +480,16 @@ xcopy /y /i ..\GitExtensions\bin\%Configuration%\Microsoft.VisualStudio.Validati
 IF ERRORLEVEL 1 EXIT /B 1
 xcopy /y /i ..\GitExtensions\bin\%Configuration%\System.Runtime.InteropServices.RuntimeInformation.dll GitExtensions\
 IF ERRORLEVEL 1 EXIT /B 1
+xcopy /y /i ..\GitExtensions\bin\%Configuration%\EasyHook.dll GitExtensions\
+IF ERRORLEVEL 1 EXIT /B 1
+xcopy /y /i ..\GitExtensions\bin\%Configuration%\EasyHook32.dll GitExtensions\
+IF ERRORLEVEL 1 EXIT /B 1
+xcopy /y /i ..\GitExtensions\bin\%Configuration%\EasyHook64.dll GitExtensions\
+IF ERRORLEVEL 1 EXIT /B 1
+xcopy /y /i ..\GitExtensions\bin\%Configuration%\Themes\dark.colors GitExtensions\Themes\
+IF ERRORLEVEL 1 EXIT /B 1
+xcopy /y /i ..\GitExtensions\bin\%Configuration%\Themes\win10default.colors GitExtensions\Themes\
+IF ERRORLEVEL 1 EXIT /B 1
 
 REM Plugins
 echo "Plugins"
@@ -740,6 +750,8 @@ IF ERRORLEVEL 1 EXIT /B 1
 xcopy /y /i ..\GitExtensions\bin\%Configuration%\NetSpell.SpellChecker.pdb GitExtensions-pdbs\
 IF ERRORLEVEL 1 EXIT /B 1
 xcopy /y /i ..\GitExtensions\bin\%Configuration%\ResourceManager.pdb GitExtensions-pdbs\
+IF ERRORLEVEL 1 EXIT /B 1
+xcopy /y /i ..\GitExtensions\bin\%Configuration%\EasyHook.pdb GitExtensions-pdbs\
 IF ERRORLEVEL 1 EXIT /B 1
 
 xcopy /y /i ..\Plugins\AutoCompileSubmodules\bin\%Configuration%\AutoCompileSubmodules.pdb GitExtensions-pdbs\Plugins\

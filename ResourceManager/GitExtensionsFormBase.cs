@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using GitCommands;
+using GitExtUtils.GitUI;
+using GitExtUtils.GitUI.Theming;
 using GitUI;
 using JetBrains.Annotations;
 using ResourceManager.Properties;
@@ -105,6 +107,10 @@ namespace ResourceManager
 
             this.AdjustForDpiScaling();
             this.EnableRemoveWordHotkey();
+            if (!AppSettings.UseSystemVisualStyle)
+            {
+                this.FixVisualStyle();
+            }
         }
 
         #region Translation

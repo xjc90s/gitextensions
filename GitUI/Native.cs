@@ -124,11 +124,12 @@ namespace GitUI
 
     internal static class NativeConstants
     {
-        internal const uint WM_MOUSEACTIVATE = 0x21;
-        internal const uint MA_ACTIVATE = 1;
-        internal const uint MA_ACTIVATEANDEAT = 2;
-        internal const uint MA_NOACTIVATE = 3;
-        internal const uint MA_NOACTIVATEANDEAT = 4;
-        internal const int CP_NOCLOSE_BUTTON = 0x200;
+        public const uint WM_MOUSEACTIVATE = 0x21;
+        public const uint MA_ACTIVATE = 1;
+        public const uint MA_ACTIVATEANDEAT = 2;
+        public const uint MA_NOACTIVATE = 3;
+        public const uint MA_NOACTIVATEANDEAT = 4;
+        public const int CP_NOCLOSE_BUTTON = 0x200;
+        public const int WM_SYSCOLORCHANGE = 21;
     }
 }

@@ -132,6 +132,19 @@
       <DependentUpon>RepoObjectsTree.cs</DependentUpon>
     </Compile>
     <Compile Include="BuildServerIntegration\BuildServerWatcher.cs" />
+    <Compile Include="Theming\PathExtension.cs" />
+    <Compile Include="Theming\ThemeChangedHandler.cs" />
+    <Compile Include="Theming\ThemeController.cs" />
+    <Compile Include="Theming\ThemeDeployment.cs" />
+    <Compile Include="Theming\ThemeEditor.cs" />
+    <Compile Include="Theming\ThemePersistence.cs" />
+    <Compile Include="Theming\DefaultTheme.cs" />
+    <Compile Include="Theming\FormThemeEditor.cs" />
+    <Compile Include="Theming\ThemeModule.cs" />
+    <Compile Include="Theming\ThemeBasedHighlighting.cs" />
+    <Compile Include="Theming\HighlightingExtension.cs" />
+    <Compile Include="Theming\StaticTheme.cs" />
+    <Compile Include="Theming\Win32ThemingHooks.cs" />
     <Compile Include="CommandsDialogs\EnvironmentInfo.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -1748,6 +1761,10 @@
       <Project>{1DC7D403-484B-43B4-B017-1356397A32CB}</Project>
       <Name>ConEmuWinForms</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Externals\EasyHook\EasyHook\EasyHook.csproj">
+      <Project>{ab53862b-3b5c-4efc-9787-1f01199ebfbf}</Project>
+      <Name>EasyHook</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Externals\Git.hub\Git.hub\Git.hub.csproj">
       <Project>{f50b1dbf-1c9f-4437-87ec-7aba805cc446}</Project>
       <Name>Git.hub</Name>
@@ -1893,6 +1910,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Icons\SyntaxHighlighting.png" />
+    <Content Include="Themes\dark.colors">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Themes\win10default.colors">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Target Name="CopyTranslations" AfterTargets="AfterBuild">
     <ItemGroup>

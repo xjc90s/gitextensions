@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Windows.Forms;
 using JetBrains.Annotations;
 
@@ -8,6 +9,9 @@ namespace GitUI
 {
     public static class ControlUtil
     {
+        private static readonly MethodInfo SetStyleMethod = typeof(TabControl)
+            .GetMethod("SetStyle", BindingFlags.Instance | BindingFlags.NonPublic);
+
         /// <summary>
         /// Enumerates all descendant controls.
         /// </summary>
@@ -67,5 +71,11 @@ namespace GitUI
                 parent = parent.Parent;
             }
         }
+
+        /// <summary>
+        /// Calls protected method <see cref="Control.SetStyle"/>
+        /// </summary>
+        public static void SetStyle(this Control control, ControlStyles styles, bool value) =>
+            SetStyleMethod.Invoke(control, new object[] { styles, value });
     }
 }

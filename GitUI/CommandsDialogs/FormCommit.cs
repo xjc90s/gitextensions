@@ -16,9 +16,11 @@ using GitCommands;
 using GitCommands.Config;
 using GitCommands.Git;
 using GitCommands.Patches;
+using GitCommands.Settings;
 using GitCommands.Utils;
 using GitExtUtils;
 using GitExtUtils.GitUI;
+using GitExtUtils.GitUI.Theming;
 using GitUI.AutoCompletion;
 using GitUI.CommandsDialogs.CommitDialog;
 using GitUI.Editor;
@@ -303,6 +305,11 @@ namespace GitUI.CommandsDialogs
             splitRight.SplitterDistance = Math.Min(splitRight.SplitterDistance, splitRight.Height - splitRight.Panel2MinSize);
 
             SelectedDiff.EscapePressed += () => DialogResult = DialogResult.Cancel;
+
+            SolveMergeconflicts.BackColor = AppSettings.BranchColor;
+            SolveMergeconflicts.SetForeColorForBackColor();
+
+            toolStripStatusBranchIcon.AdaptImageLightness();
 
             InitializeComplete();
 
@@ -2817,7 +2824,7 @@ namespace GitUI.CommandsDialogs
                 {
                     // Ensure next line. Optionally add a bullet.
                     Message.EnsureEmptyLine(commitValidationIndentAfterFirstLine, 1);
-                    Message.ChangeTextColor(2, 0, Message.LineLength(2), Color.Black);
+                    Message.ChangeTextColor(2, 0, Message.LineLength(2), SystemColors.ControlText);
                     if (FormatLine(2))
                     {
                         changed = true;
@@ -2851,7 +2858,7 @@ namespace GitUI.CommandsDialogs
 
                     if (!textAppended && len > 0)
                     {
-                        Message.ChangeTextColor(line, offset, len, Color.Black);
+                        Message.ChangeTextColor(line, offset, len, SystemColors.WindowText);
                     }
 
                     if (lineLength > lineLimit)
@@ -3228,7 +3235,11 @@ namespace GitUI.CommandsDialogs
 
             if (AppSettings.CommitAndPushForcedWhenAmend)
             {
-                CommitAndPush.BackColor = Amend.Checked ? Color.Salmon : SystemColors.ButtonFace;
+                CommitAndPush.BackColor = Amend.Checked
+                    ? AppSettings.BranchColor
+                    : SystemColors.ButtonFace;
+
+                CommitAndPush.SetForeColorForBackColor();
             }
         }
 

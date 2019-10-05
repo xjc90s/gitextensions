@@ -1,11 +1,16 @@
-﻿namespace GitUI.UserControls
+﻿using GitCommands;
+
+namespace GitUI.UserControls
 {
     public class NativeTreeView : System.Windows.Forms.TreeView
     {
         protected override void CreateHandle()
         {
             base.CreateHandle();
-            NativeMethods.SetWindowTheme(Handle, "explorer", null);
+            if (AppSettings.UseSystemVisualStyle)
+            {
+                NativeMethods.SetWindowTheme(Handle, "explorer", null);
+            }
         }
     }
 }
