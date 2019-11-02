@@ -92,8 +92,7 @@ namespace GitUI
 
         [DllImport("user32", EntryPoint = "ShowCaret")]
         [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool ShowCaretAPI(
-            IntPtr hwnd);
+        internal static extern bool ShowCaretAPI(IntPtr hwnd);
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         internal static extern uint GetShortPathName(string lpszLongPath, StringBuilder lpszShortPath, int cchBuffer);
@@ -118,6 +117,9 @@ namespace GitUI
 
         [DllImport("wininet.dll")]
         internal static extern bool InternetGetConnectedState(out int description, int reservedValue);
+
+        [DllImport("gdi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        internal static extern IntPtr CreateSolidBrush(int nIndex);
 
         #endregion
     }

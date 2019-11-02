@@ -25,11 +25,11 @@ namespace GitExtensions
         [STAThread]
         private static void Main()
         {
-            ThemeModule.Load();
-            Application.ApplicationExit += (s, e) => ThemeModule.Unload();
-
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+
+            ThemeModule.Load();
+            Application.ApplicationExit += (s, e) => ThemeModule.Unload();
 
             HighDpiMouseCursors.Enable();
 

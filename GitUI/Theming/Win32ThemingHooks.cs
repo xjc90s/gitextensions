@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using EasyHook;
+using GitCommands;
 using GitExtUtils.GitUI.Theming;
+using GitUI.UserControls;
 
 namespace GitUI.Theming
 {
@@ -13,10 +16,16 @@ namespace GitUI.Theming
         private static BrushDelegate _brushBypass;
         private static MessageBoxADelegate _messageBoxABypass;
         private static MessageBoxWDelegate _messageBoxWBypass;
+        private static DrawThemeBackgroundDelegate _drawThemeBackgroundBypass;
+
         private static LocalHook _colorHook;
         private static LocalHook _brushHook;
         private static LocalHook _messageBoxAHook;
         private static LocalHook _messageBoxWHook;
+        private static LocalHook _drawThemeBackgroundHook;
+
+        private static HashSet<IntPtr> _scrollBarThemeDataHandles;
+
         private static bool _showingMessageBox;
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
@@ -31,8 +40,16 @@ namespace GitUI.Theming
         [UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true, CharSet = CharSet.Unicode)]
         private delegate int MessageBoxWDelegate(IntPtr hwnd, string test, string caption, int type);
 
+        [UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
+        private delegate int DrawThemeBackgroundDelegate(
+            IntPtr htheme, IntPtr hdc,
+            int partId, int stateId,
+            ref NativeMethods.RECT prect, ref NativeMethods.RECT pcliprect);
+
         public static void InstallColorHooks(Theme theme)
         {
+            _theme = theme;
+
             (_brushHook, _brushBypass) = InstallHook<BrushDelegate>(
                 "user32.dll",
                 "GetSysColorBrush",
@@ -43,7 +60,19 @@ namespace GitUI.Theming
                 "GetSysColor",
                 ColorHook);
 
-            _theme = theme;
+            (_drawThemeBackgroundHook, _drawThemeBackgroundBypass) =
+                InstallHook<DrawThemeBackgroundDelegate>(
+                    "uxtheme.dll",
+                    "DrawThemeBackground",
+                    DrawThemeBackgroundHook);
+
+            const string ScrollbarClsid = "Scrollbar";
+            _scrollBarThemeDataHandles = new HashSet<IntPtr>
+            {
+                NativeMethods.OpenThemeData(IntPtr.Zero, ScrollbarClsid),
+                NativeMethods.OpenThemeData(new NativeListView().Handle, ScrollbarClsid),
+                NativeMethods.OpenThemeData(new ICSharpCode.TextEditor.TextEditorControl().Handle, ScrollbarClsid)
+            };
         }
 
         public static void InstallMessageBoxHooks()
@@ -65,10 +94,16 @@ namespace GitUI.Theming
             _brushHook?.Dispose();
             _messageBoxAHook?.Dispose();
             _messageBoxWHook?.Dispose();
-        }
+            _drawThemeBackgroundHook?.Dispose();
 
-        [DllImport("gdi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern IntPtr CreateSolidBrush(int nIndex);
+            if (_scrollBarThemeDataHandles != null)
+            {
+                foreach (IntPtr htheme in _scrollBarThemeDataHandles)
+                {
+                    NativeMethods.CloseThemeData(htheme);
+                }
+            }
+        }
 
         private static (LocalHook, TDelegate) InstallHook<TDelegate>(string dll, string method, TDelegate hookImpl)
             where TDelegate : Delegate
@@ -97,7 +132,7 @@ namespace GitUI.Theming
                 return _colorBypass(nIndex);
             }
 
-            var color = _theme.GetColor(GetKnownColor(nIndex));
+            var color = _theme.GetColor(Win32ColorTranslator.GetKnownColor(nIndex));
             if (color == Color.Empty)
             {
                 return _colorBypass(nIndex);
@@ -113,13 +148,13 @@ namespace GitUI.Theming
                 return _brushBypass(nIndex);
             }
 
-            var color = _theme.GetColor(GetKnownColor(nIndex));
+            var color = _theme.GetColor(Win32ColorTranslator.GetKnownColor(nIndex));
             if (color == Color.Empty)
             {
                 return _brushBypass(nIndex);
             }
 
-            return CreateSolidBrush(ColorTranslator.ToWin32(color));
+            return NativeMethods.CreateSolidBrush(ColorTranslator.ToWin32(color));
         }
 
         private static int MessageBoxAHook(IntPtr hwnd, string text, string caption, int type)
@@ -138,15 +173,22 @@ namespace GitUI.Theming
             return result;
         }
 
-        private static KnownColor GetKnownColor(int nIndex)
+        private static int DrawThemeBackgroundHook(
+            IntPtr htheme, IntPtr hdc,
+            int partId, int stateId,
+            ref NativeMethods.RECT prect, ref NativeMethods.RECT pcliprect)
         {
-            if ((nIndex & 0xffffff00) == 0)
+            if (_scrollBarThemeDataHandles.Contains(htheme))
             {
-                nIndex |= -0x80000000;
-                return ColorTranslator.FromOle(nIndex).ToKnownColor();
+                if (!AppSettings.UseSystemVisualStyle)
+                {
+                    ScrollBarRenderer.RenderScrollBar(hdc, partId, stateId, prect);
+                    return 0;
+                }
             }
 
-            return ColorTranslator.FromWin32(nIndex).ToKnownColor();
+            int result = _drawThemeBackgroundBypass(htheme, hdc, partId, stateId, ref prect, ref pcliprect);
+            return result;
         }
     }
 }

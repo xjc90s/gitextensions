@@ -134,6 +134,7 @@
     <Compile Include="BuildServerIntegration\BuildServerWatcher.cs" />
     <Compile Include="Theming\PathExtension.cs" />
     <Compile Include="Theming\ThemeChangedHandler.cs" />
+    <Compile Include="Theming\ScrollBarRenderer.cs" />
     <Compile Include="Theming\ThemeController.cs" />
     <Compile Include="Theming\ThemeDeployment.cs" />
     <Compile Include="Theming\ThemeEditor.cs" />
@@ -144,6 +145,7 @@
     <Compile Include="Theming\ThemeBasedHighlighting.cs" />
     <Compile Include="Theming\HighlightingExtension.cs" />
     <Compile Include="Theming\StaticTheme.cs" />
+    <Compile Include="Theming\Win32ColorTranslator.cs" />
     <Compile Include="Theming\Win32ThemingHooks.cs" />
     <Compile Include="CommandsDialogs\EnvironmentInfo.cs">
       <SubType>UserControl</SubType>
