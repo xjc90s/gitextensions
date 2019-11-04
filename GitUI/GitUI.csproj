@@ -133,6 +133,7 @@
       <DependentUpon>RepoObjectsTree.cs</DependentUpon>
     </Compile>
     <Compile Include="BuildServerIntegration\BuildServerWatcher.cs" />
+    <Compile Include="Theming\ListViewRenderer.cs" />
     <Compile Include="Theming\PathExtension.cs" />
     <Compile Include="Theming\ThemeChangedHandler.cs" />
     <Compile Include="Theming\ScrollBarRenderer.cs" />

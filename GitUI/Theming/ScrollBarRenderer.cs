@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Windows.Forms.VisualStyles;
 
 namespace GitUI.Theming
 {
@@ -265,6 +266,18 @@ namespace GitUI.Theming
             };
         }
 
+        public static int GetThemeColor(int ipartid, int istateid, int ipropid, out int pcolor)
+        {
+            if ((Parts)ipartid == Parts.SBP_UNDOCUMENTED && (ColorProperty)ipropid == ColorProperty.FillColor)
+            {
+                pcolor = ColorTranslator.ToWin32(SystemColors.Control);
+                return 0;
+            }
+
+            pcolor = 0;
+            return 1;
+        }
+
         private enum Parts
         {
             SBP_ARROWBTN = 1,
@@ -277,6 +290,9 @@ namespace GitUI.Theming
             SBP_GRIPPERHORZ = 8,
             SBP_GRIPPERVERT = 9,
             SBP_SIZEBOX = 10,
+
+            // square gap between horizontal and vertical scroll
+            SBP_UNDOCUMENTED = 11
         }
 
         private static class States

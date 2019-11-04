@@ -17,14 +17,19 @@ namespace GitUI.Theming
         private static MessageBoxADelegate _messageBoxABypass;
         private static MessageBoxWDelegate _messageBoxWBypass;
         private static DrawThemeBackgroundDelegate _drawThemeBackgroundBypass;
+        private static GetThemeColorDelegate _getThemeColorBypass;
+        private static DrawThemeTextExDelegate _drawThemeTextExBypass;
 
         private static LocalHook _colorHook;
         private static LocalHook _brushHook;
         private static LocalHook _messageBoxAHook;
         private static LocalHook _messageBoxWHook;
         private static LocalHook _drawThemeBackgroundHook;
+        private static LocalHook _getThemeColorHook;
+        private static LocalHook _drawThemeTextExHook;
 
-        private static HashSet<IntPtr> _scrollBarThemeDataHandles;
+        private static HashSet<IntPtr> _scrollBarThemeHandles;
+        private static IntPtr _nativeListViewThemeHandle;
 
         private static bool _showingMessageBox;
 
@@ -46,6 +51,21 @@ namespace GitUI.Theming
             int partId, int stateId,
             ref NativeMethods.RECT prect, ref NativeMethods.RECT pcliprect);
 
+        [UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
+        private delegate int GetThemeColorDelegate(IntPtr htheme,
+            int ipartid, int istateid, int ipropid,
+            out int pcolor);
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true, CharSet = CharSet.Unicode)]
+        private delegate int DrawThemeTextExDelegate(
+            IntPtr htheme, IntPtr hdc,
+            int partid, int stateid,
+            string pszText,
+            int cchText,
+            NativeMethods.DT dwtextflags,
+            ref NativeMethods.RECT prect,
+            ref NativeMethods.DTTOPTS poptions);
+
         public static void InstallColorHooks(Theme theme)
         {
             _theme = theme;
@@ -66,14 +86,30 @@ namespace GitUI.Theming
                     "DrawThemeBackground",
                     DrawThemeBackgroundHook);
 
-            const string scrollbarClsid = "Scrollbar";
+            (_getThemeColorHook, _getThemeColorBypass) =
+                InstallHook<GetThemeColorDelegate>(
+                    "uxtheme.dll",
+                    "GetThemeColor",
+                    GetThemeColorHook);
 
-            _scrollBarThemeDataHandles = new HashSet<IntPtr>
+            (_drawThemeTextExHook, _drawThemeTextExBypass) =
+                InstallHook<DrawThemeTextExDelegate>(
+                    "uxtheme.dll",
+                    "DrawThemeTextEx",
+                    DrawThemeTextExHook);
+
+            const string scrollbarClsid = "Scrollbar";
+            const string listviewClsid = "Listview";
+
+            _scrollBarThemeHandles = new HashSet<IntPtr>
             {
                 NativeMethods.OpenThemeData(IntPtr.Zero, scrollbarClsid),
-                NativeMethods.OpenThemeData(new NativeListView().Handle, scrollbarClsid),
                 NativeMethods.OpenThemeData(new ICSharpCode.TextEditor.TextEditorControl().Handle, scrollbarClsid)
             };
+
+            var nativeListViewHandle = new NativeListView().Handle;
+            _scrollBarThemeHandles.Add(NativeMethods.OpenThemeData(nativeListViewHandle, scrollbarClsid));
+            _nativeListViewThemeHandle = NativeMethods.OpenThemeData(nativeListViewHandle, listviewClsid);
         }
 
         public static void InstallMessageBoxHooks()
@@ -96,13 +132,20 @@ namespace GitUI.Theming
             _messageBoxAHook?.Dispose();
             _messageBoxWHook?.Dispose();
             _drawThemeBackgroundHook?.Dispose();
+            _getThemeColorHook?.Dispose();
+            _drawThemeTextExHook?.Dispose();
 
-            if (_scrollBarThemeDataHandles != null)
+            if (_scrollBarThemeHandles != null)
             {
-                foreach (IntPtr htheme in _scrollBarThemeDataHandles)
+                foreach (IntPtr htheme in _scrollBarThemeHandles)
                 {
                     NativeMethods.CloseThemeData(htheme);
                 }
+            }
+
+            if (_nativeListViewThemeHandle != IntPtr.Zero)
+            {
+                NativeMethods.CloseThemeData(_nativeListViewThemeHandle);
             }
         }
 
@@ -176,20 +219,61 @@ namespace GitUI.Theming
 
         private static int DrawThemeBackgroundHook(
             IntPtr htheme, IntPtr hdc,
-            int partId, int stateId,
+            int partid, int stateid,
             ref NativeMethods.RECT prect, ref NativeMethods.RECT pcliprect)
         {
             if (!AppSettings.UseSystemVisualStyle)
             {
-                if (_scrollBarThemeDataHandles.Contains(htheme))
+                if (_scrollBarThemeHandles.Contains(htheme))
                 {
-                    ScrollBarRenderer.RenderScrollBar(hdc, partId, stateId, prect);
+                    ScrollBarRenderer.RenderScrollBar(hdc, partid, stateid, prect);
                     return 0;
                 }
             }
 
-            int result = _drawThemeBackgroundBypass(htheme, hdc, partId, stateId, ref prect, ref pcliprect);
+            int result = _drawThemeBackgroundBypass(htheme, hdc, partid, stateid, ref prect, ref pcliprect);
             return result;
+        }
+
+        private static int GetThemeColorHook(IntPtr htheme, int ipartid, int istateid, int ipropid, out int pcolor)
+        {
+            if (!AppSettings.UseSystemVisualStyle)
+            {
+                if (_scrollBarThemeHandles.Contains(htheme))
+                {
+                    if (ScrollBarRenderer.GetThemeColor(ipartid, istateid, ipropid, out pcolor) == 0)
+                    {
+                        return 0;
+                    }
+                }
+            }
+
+            return _getThemeColorBypass(htheme, ipartid, istateid, ipropid, out pcolor);
+        }
+
+        private static int DrawThemeTextExHook(
+            IntPtr htheme, IntPtr hdc,
+            int partid, int stateid,
+            string psztext, int cchtext,
+            NativeMethods.DT dwtextflags,
+            ref NativeMethods.RECT prect, ref NativeMethods.DTTOPTS poptions)
+        {
+            if (NativeListViewRenderer.RenderListView(
+                htheme, hdc,
+                partid, stateid,
+                psztext, cchtext,
+                dwtextflags,
+                ref prect, ref poptions) == 0)
+            {
+                return 0;
+            }
+
+            return _drawThemeTextExBypass(
+                htheme, hdc,
+                partid, stateid,
+                psztext, cchtext,
+                dwtextflags,
+                ref prect, ref poptions);
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -7,6 +8,19 @@ namespace GitUI
     internal static class NativeMethods
     {
         #region Unmanaged Code
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal readonly struct POINT
+        {
+            public readonly int X;
+            public readonly int Y;
+
+            public POINT(int x, int y)
+            {
+                X = x;
+                Y = y;
+            }
+        }
 
         [StructLayout(LayoutKind.Sequential)]
         internal struct RECT
@@ -63,6 +77,30 @@ namespace GitUI
             public byte B;
         }
 
+        internal delegate int DTT_CALLBACK_PROC(IntPtr hdc,
+            [MarshalAs(UnmanagedType.LPWStr)] string text, int textLen, ref RECT rc, int flags,
+            IntPtr lParam);
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct DTTOPTS
+        {
+            public int dwSize;
+            public DTT dwFlags;
+            public int crText;
+            public int crBorder;
+            public int crShadow;
+            public TEXTSHADOWTYPE iTextShadowType;
+            public POINT ptShadowOffset;
+            public int iBorderSize;
+            public int iFontPropId;
+            public int iColorPropId;
+            public int iStateId;
+            [MarshalAs(UnmanagedType.Bool)] public bool fApplyOverlay;
+            public int iGlowSize;
+            [MarshalAs(UnmanagedType.FunctionPtr)] public DTT_CALLBACK_PROC pfnDrawTextCallback;
+            public IntPtr lParam;
+        }
+
         internal const int WM_USER = 0x0400;
         internal const int EM_FORMATRANGE = WM_USER + 57;
         internal const int WM_HSCROLL = 276;
@@ -84,11 +122,66 @@ namespace GitUI
             uint msg,
             IntPtr wParam,
             IntPtr lParam);
+
         internal const int EM_LINEINDEX = 0x00BB;
         internal const int EM_LINELENGTH = 0x00C1;
         internal const int EM_POSFROMCHAR = 0x00D6;
         internal const int EM_CHARFROMPOS = 0x00D7;
         internal const int EM_GETFIRSTVISIBLELINE = 0xCE;
+
+        [Flags]
+        internal enum DTT : int
+        {
+            TextColor = 1,
+            BorderColor = 1 << 1,
+            ShadowColor = 1 << 2,
+            ShadowType = 1 << 3,
+            ShadowOffset = 1 << 4,
+            BorderSize = 1 << 5,
+            FontProp = 1 << 6,
+            ColorProp = 1 << 7,
+            StateID = 1 << 8,
+            CalcRect = 1 << 9,
+            ApplyOverlay = 1 << 10,
+            GlowSize = 2048,
+            Callback = 4096,
+            Composited = 1 << 13
+        }
+
+        internal enum DT : int
+        {
+            DT_BOTTOM = 0x00000008,
+            DT_CALCRECT = 0x00000400,
+            DT_CENTER = 0x00000001,
+            DT_EDITCONTROL = 0x00002000,
+            DT_END_ELLIPSIS = 0x00008000,
+            DT_EXPANDTABS = 0x00000040,
+            DT_EXTERNALLEADING = 0x00000200,
+            DT_HIDEPREFIX = 0x00100000,
+            DT_INTERNAL = 0x00001000,
+            DT_LEFT = 0x00000000,
+            DT_MODIFYSTRING = 0x00010000,
+            DT_NOCLIP = 0x00000100,
+            DT_NOFULLWIDTHCHARBREAK = 0x00080000,
+            DT_NOPREFIX = 0x00000800,
+            DT_PATH_ELLIPSIS = 0x00004000,
+            DT_PREFIXONLY = 0x00200000,
+            DT_RIGHT = 0x00000002,
+            DT_RTLREADING = 0x00020000,
+            DT_SINGLELINE = 0x00000020,
+            DT_TABSTOP = 0x00000080,
+            DT_TOP = 0x00000000,
+            DT_VCENTER = 0x00000004,
+            DT_WORDBREAK = 0x00000010,
+            DT_WORD_ELLIPSIS = 0x00040000,
+        }
+
+        internal enum TEXTSHADOWTYPE : int
+        {
+            None = 0,
+            Single = 1,
+            Continuous = 2,
+        }
 
         [DllImport("user32", EntryPoint = "ShowCaret")]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -133,5 +226,14 @@ namespace GitUI
         public const uint MA_NOACTIVATEANDEAT = 4;
         public const int CP_NOCLOSE_BUTTON = 0x200;
         public const int WM_SYSCOLORCHANGE = 21;
+    }
+
+    internal static class NativeConstantsExtensions
+    {
+        public static Rectangle ToRectangle(this NativeMethods.RECT rect) =>
+            Rectangle.FromLTRB(rect.Left, rect.Top, rect.Right, rect.Bottom);
+
+        public static Color ToColor(this NativeMethods.COLORREF colorref) =>
+            Color.FromArgb(colorref.R, colorref.G, colorref.B);
     }
 }
