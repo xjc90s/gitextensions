@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Reflection;
 using System.Windows.Forms;
 using GitUI;
 
@@ -234,9 +233,7 @@ namespace GitExtUtils.GitUI.Theming
         }
 
         private Pen GetBorderPen() =>
-            _tabs.Enabled
-                ? new Pen(SystemBrushes.ActiveBorder, BorderWidth)
-                : new Pen(SystemBrushes.InactiveBorder, BorderWidth);
+            new Pen(SystemBrushes.ControlDark, BorderWidth);
 
         private void HandleDisposed(object sender, EventArgs e)
         {

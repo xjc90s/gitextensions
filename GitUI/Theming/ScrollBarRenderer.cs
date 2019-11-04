@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Drawing;
-using System.Linq;
 
 namespace GitUI.Theming
 {
@@ -20,30 +19,23 @@ namespace GitUI.Theming
 
         private static void DrawBackground(Graphics g, int partId, int stateId, NativeMethods.RECT prect)
         {
-            var backColor = GetBackColor(stateId, (Parts)partId);
-            g.FillRectangle(
-                SystemBrushes.FromSystemColor(Color.FromKnownColor(backColor)),
-                Rectangle.FromLTRB(prect.Left, prect.Top, prect.Right, prect.Bottom));
+            var backBrush = GetBackBrush(stateId, (Parts)partId);
+            g.FillRectangle(backBrush, prect.ToRectangle());
         }
 
         private static void DrawArrow(Graphics g, States.ArrowButton stateId, NativeMethods.RECT prect)
         {
-            var foreColor = GetArrowButtonForeColor(stateId);
+            var foreBrush = GetArrowButtonForeBrush(stateId);
             var arrowPts = GetArrowPolygon(prect, stateId);
-
-            g.FillPolygon(
-                SystemBrushes.FromSystemColor(Color.FromKnownColor(foreColor)),
-                arrowPts.Select(p => new Point(p.X, p.Y)).ToArray());
+            g.FillPolygon(foreBrush, arrowPts);
         }
 
-        private static KnownColor GetBackColor(int stateId, Parts partId)
+        private static Brush GetBackBrush(int stateId, Parts partId)
         {
-            KnownColor backColor;
             switch (partId)
             {
                 case Parts.SBP_ARROWBTN:
-                    backColor = GetArrowButtonBackColor((States.ArrowButton)stateId);
-                    break;
+                    return GetArrowButtonBackBrush((States.ArrowButton)stateId);
 
                 case Parts.SBP_THUMBBTNHORZ:
                 case Parts.SBP_THUMBBTNVERT:
@@ -53,23 +45,18 @@ namespace GitUI.Theming
                     {
                         case States.TrackThumb.SCRBS_NORMAL:
                         case States.TrackThumb.SCRBS_HOVER:
-                            backColor = KnownColor.ControlLight;
-                            break;
+                            return SystemBrushes.ControlLight;
 
                         case States.TrackThumb.SCRBS_HOT:
-                            backColor = KnownColor.ControlDark;
-                            break;
+                            return SystemBrushes.ControlDark;
+
                         case States.TrackThumb.SCRBS_PRESSED:
-                            backColor = KnownColor.ControlDarkDark;
-                            break;
+                            return SystemBrushes.ControlDarkDark;
 
                         // case States.TrackThumb.SCRBS_DISABLED:
                         default:
-                            backColor = KnownColor.Control;
-                            break;
+                            return SystemBrushes.Control;
                     }
-
-                    break;
 
                 // case Parts.SBP_LOWERTRACKHORZ:
                 // case Parts.SBP_LOWERTRACKVERT:
@@ -85,17 +72,12 @@ namespace GitUI.Theming
                         // case States.TrackThumb.SCRBS_PRESSED:
                         // case States.TrackThumb.SCRBS_DISABLED:
                         default:
-                            backColor = KnownColor.Control;
-                            break;
+                            return SystemBrushes.Control;
                     }
-
-                    break;
             }
-
-            return backColor;
         }
 
-        private static KnownColor GetArrowButtonBackColor(States.ArrowButton stateId)
+        private static Brush GetArrowButtonBackBrush(States.ArrowButton stateId)
         {
             switch (stateId)
             {
@@ -103,19 +85,19 @@ namespace GitUI.Theming
                 case States.ArrowButton.ABS_DOWNPRESSED:
                 case States.ArrowButton.ABS_LEFTPRESSED:
                 case States.ArrowButton.ABS_RIGHTPRESSED:
-                    return KnownColor.ControlDarkDark;
+                    return SystemBrushes.ControlDarkDark;
 
                 case States.ArrowButton.ABS_UPHOT:
                 case States.ArrowButton.ABS_DOWNHOT:
                 case States.ArrowButton.ABS_LEFTHOT:
                 case States.ArrowButton.ABS_RIGHTHOT:
-                    return KnownColor.ControlDark;
+                    return SystemBrushes.ControlDark;
 
                 case States.ArrowButton.ABS_UPHOVER:
                 case States.ArrowButton.ABS_DOWNHOVER:
                 case States.ArrowButton.ABS_LEFTHOVER:
                 case States.ArrowButton.ABS_RIGHTHOVER:
-                    return KnownColor.ControlLight;
+                    return SystemBrushes.ControlLight;
 
                 // case States.ArrowButton.ABS_UPDISABLED:
                 // case States.ArrowButton.ABS_DOWNDISABLED:
@@ -126,11 +108,11 @@ namespace GitUI.Theming
                 // case States.ArrowButton.ABS_LEFTNORMAL:
                 // case States.ArrowButton.ABS_RIGHTNORMAL:
                 default:
-                    return KnownColor.Control;
+                    return SystemBrushes.Control;
             }
         }
 
-        private static KnownColor GetArrowButtonForeColor(States.ArrowButton stateId)
+        private static Brush GetArrowButtonForeBrush(States.ArrowButton stateId)
         {
             switch (stateId)
             {
@@ -138,13 +120,13 @@ namespace GitUI.Theming
                 case States.ArrowButton.ABS_DOWNPRESSED:
                 case States.ArrowButton.ABS_LEFTPRESSED:
                 case States.ArrowButton.ABS_RIGHTPRESSED:
-                    return KnownColor.Control;
+                    return SystemBrushes.Control;
 
                 case States.ArrowButton.ABS_UPDISABLED:
                 case States.ArrowButton.ABS_DOWNDISABLED:
                 case States.ArrowButton.ABS_LEFTDISABLED:
                 case States.ArrowButton.ABS_RIGHTDISABLED:
-                    return KnownColor.GrayText;
+                    return SystemBrushes.GrayText;
 
                 // case States.ArrowButton.ABS_UPHOT:
                 // case States.ArrowButton.ABS_DOWNHOT:
@@ -159,7 +141,7 @@ namespace GitUI.Theming
                 // case States.ArrowButton.ABS_LEFTHOVER:
                 // case States.ArrowButton.ABS_RIGHTHOVER:
                 default:
-                    return KnownColor.ControlDarkDark;
+                    return SystemBrushes.ControlDarkDark;
             }
         }
 

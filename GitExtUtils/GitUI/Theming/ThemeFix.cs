@@ -59,9 +59,11 @@ namespace GitExtUtils.GitUI.Theming
 
         private static void SetupDataGridView(DataGridView grid)
         {
+            grid.EnableHeadersVisualStyles = false;
+
             if (grid.BorderStyle != BorderStyle.None)
             {
-                grid.BorderStyle = PreferredBorderStyle;
+                grid.BorderStyle = BorderStyle.None;
             }
 
             foreach (var column in grid.Columns)

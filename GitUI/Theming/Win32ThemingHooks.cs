@@ -29,10 +29,10 @@ namespace GitUI.Theming
         private static bool _showingMessageBox;
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
-        private delegate int ColorDelegate(int nIndex);
+        private delegate int ColorDelegate(int nindex);
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
-        private delegate IntPtr BrushDelegate(int nIndex);
+        private delegate IntPtr BrushDelegate(int nindex);
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true, CharSet = CharSet.Ansi)]
         private delegate int MessageBoxADelegate(IntPtr hwnd, string test, string caption, int type);
@@ -66,12 +66,13 @@ namespace GitUI.Theming
                     "DrawThemeBackground",
                     DrawThemeBackgroundHook);
 
-            const string ScrollbarClsid = "Scrollbar";
+            const string scrollbarClsid = "Scrollbar";
+
             _scrollBarThemeDataHandles = new HashSet<IntPtr>
             {
-                NativeMethods.OpenThemeData(IntPtr.Zero, ScrollbarClsid),
-                NativeMethods.OpenThemeData(new NativeListView().Handle, ScrollbarClsid),
-                NativeMethods.OpenThemeData(new ICSharpCode.TextEditor.TextEditorControl().Handle, ScrollbarClsid)
+                NativeMethods.OpenThemeData(IntPtr.Zero, scrollbarClsid),
+                NativeMethods.OpenThemeData(new NativeListView().Handle, scrollbarClsid),
+                NativeMethods.OpenThemeData(new ICSharpCode.TextEditor.TextEditorControl().Handle, scrollbarClsid)
             };
         }
 
@@ -125,33 +126,33 @@ namespace GitUI.Theming
             return (hook, original);
         }
 
-        private static int ColorHook(int nIndex)
+        private static int ColorHook(int nindex)
         {
             if (_showingMessageBox)
             {
-                return _colorBypass(nIndex);
+                return _colorBypass(nindex);
             }
 
-            var color = _theme.GetColor(Win32ColorTranslator.GetKnownColor(nIndex));
+            var color = _theme.GetColor(Win32ColorTranslator.GetKnownColor(nindex));
             if (color == Color.Empty)
             {
-                return _colorBypass(nIndex);
+                return _colorBypass(nindex);
             }
 
             return ColorTranslator.ToWin32(color);
         }
 
-        private static IntPtr BrushHook(int nIndex)
+        private static IntPtr BrushHook(int nindex)
         {
             if (_showingMessageBox)
             {
-                return _brushBypass(nIndex);
+                return _brushBypass(nindex);
             }
 
-            var color = _theme.GetColor(Win32ColorTranslator.GetKnownColor(nIndex));
+            var color = _theme.GetColor(Win32ColorTranslator.GetKnownColor(nindex));
             if (color == Color.Empty)
             {
-                return _brushBypass(nIndex);
+                return _brushBypass(nindex);
             }
 
             return NativeMethods.CreateSolidBrush(ColorTranslator.ToWin32(color));
@@ -178,9 +179,9 @@ namespace GitUI.Theming
             int partId, int stateId,
             ref NativeMethods.RECT prect, ref NativeMethods.RECT pcliprect)
         {
-            if (_scrollBarThemeDataHandles.Contains(htheme))
+            if (!AppSettings.UseSystemVisualStyle)
             {
-                if (!AppSettings.UseSystemVisualStyle)
+                if (_scrollBarThemeDataHandles.Contains(htheme))
                 {
                     ScrollBarRenderer.RenderScrollBar(hdc, partId, stateId, prect);
                     return 0;
