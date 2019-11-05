@@ -153,6 +153,9 @@ namespace GitExtUtils.GitUI.Theming
             {
                 textBox.BorderStyle = PreferredBorderStyle;
             }
+
+            textBox.TouchBackColor();
+            textBox.EnabledChanged += (s, e) => ((TextBoxBase)s).TouchBackColor();
         }
 
         private static void SetupToolStrip(ToolStrip strip)
@@ -178,7 +181,7 @@ namespace GitExtUtils.GitUI.Theming
 
         private static void SetupGroupBox(this GroupBox box)
         {
-            box.ForeColor = box.ForeColor;
+            box.TouchForeColor();
         }
 
         private static void SetupPanel(Panel panel)
@@ -200,15 +203,15 @@ namespace GitExtUtils.GitUI.Theming
         {
             if (page.BackColor.IsKnownColor)
             {
-                page.BackColor = page.BackColor;
+                page.TouchBackColor();
             }
         }
 
         private static void SetupTreeView(TreeView view)
         {
             var unused = view.Handle; // force handle creation
-            view.BackColor = view.BackColor;
-            view.ForeColor = view.ForeColor;
+            view.TouchBackColor();
+            view.TouchForeColor();
             if (view.LineColor == Color.Black || view.LineColor == Color.Empty)
             {
                 view.LineColor = SystemColors.WindowText;
@@ -256,7 +259,31 @@ namespace GitExtUtils.GitUI.Theming
         private static void SetupComboBox(this ComboBox menu)
         {
             menu.FlatStyle = PreferredFlatStyle;
+            menu.TouchBackColor(rudely: true);
+
+            menu.EnabledChanged += (s, e) =>
+            {
+                var m = (ComboBox)s;
+                m.TouchBackColor(rudely: true);
+            };
         }
+
+        private static void TouchBackColor(this Control c, bool rudely = false)
+        {
+            if (rudely)
+            {
+                var original = c.BackColor;
+                c.BackColor = Color.Magenta;
+                c.BackColor = original;
+            }
+            else
+            {
+                c.BackColor = c.BackColor;
+            }
+        }
+
+        private static void TouchForeColor(this Control c) =>
+            c.ForeColor = c.ForeColor;
 
         private static bool IsFirstTime(IWin32Window menu)
         {
