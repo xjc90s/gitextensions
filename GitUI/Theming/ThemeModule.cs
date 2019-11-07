@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Windows.Controls;
+using System.Windows.Forms;
 using GitCommands;
 using GitExtUtils.GitUI.Theming;
+using Control = System.Windows.Forms.Control;
 
 namespace GitUI.Theming
 {
@@ -49,6 +52,7 @@ namespace GitUI.Theming
         public static void Unload()
         {
             Win32ThemingHooks.Uninstall();
+            Win32ThemingHooks.WindowCreated -= Handle_WindowCreated;
         }
 
         public static void ShowEditor()
@@ -86,6 +90,17 @@ namespace GitUI.Theming
                 return;
             }
 
+            try
+            {
+                Win32ThemingHooks.InstallCreateWindowHook();
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Failed to install create window hook: {ex}");
+                return;
+            }
+
+            Win32ThemingHooks.WindowCreated += Handle_WindowCreated;
             Editor.LoadCurrentTheme(AppSettings.UITheme);
         }
 
@@ -99,6 +114,22 @@ namespace GitUI.Theming
             {
                 // non mission-critical, do not crash
                 Trace.WriteLine($"Failed to install MessageBox hooks: {ex}");
+            }
+        }
+
+        private static void Handle_WindowCreated(IntPtr hwnd)
+        {
+            switch (Control.FromHandle(hwnd))
+            {
+                case Form form:
+                    form.Load += (s, e) =>
+                    {
+                        if (!AppSettings.UseSystemVisualStyle)
+                        {
+                            ((Form)s).FixVisualStyle();
+                        }
+                    };
+                    break;
             }
         }
     }

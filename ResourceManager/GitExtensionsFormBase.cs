@@ -107,10 +107,6 @@ namespace ResourceManager
 
             this.AdjustForDpiScaling();
             this.EnableRemoveWordHotkey();
-            if (!AppSettings.UseSystemVisualStyle)
-            {
-                this.FixVisualStyle();
-            }
         }
 
         #region Translation

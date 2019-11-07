@@ -19,6 +19,7 @@ namespace GitUI.Theming
         private static DrawThemeBackgroundDelegate _drawThemeBackgroundBypass;
         private static GetThemeColorDelegate _getThemeColorBypass;
         private static DrawThemeTextExDelegate _drawThemeTextExBypass;
+        private static CreateWindowExDelegate _createWindowExBypass;
 
         private static LocalHook _colorHook;
         private static LocalHook _brushHook;
@@ -27,9 +28,12 @@ namespace GitUI.Theming
         private static LocalHook _drawThemeBackgroundHook;
         private static LocalHook _getThemeColorHook;
         private static LocalHook _drawThemeTextExHook;
+        private static LocalHook _createWindowExHook;
 
         private static HashSet<IntPtr> _scrollBarThemeHandles;
         private static IntPtr _nativeListViewThemeHandle;
+
+        public static event Action<IntPtr> WindowCreated;
 
         private static bool _showingMessageBox;
 
@@ -65,6 +69,21 @@ namespace GitUI.Theming
             NativeMethods.DT dwtextflags,
             ref NativeMethods.RECT prect,
             ref NativeMethods.DTTOPTS poptions);
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true, CharSet = CharSet.Unicode)]
+        private delegate IntPtr CreateWindowExDelegate(
+            int dwexstyle,
+            IntPtr lpclassname,
+            IntPtr lpwindowname,
+            int dwstyle,
+            int x,
+            int y,
+            int nwidth,
+            int nheight,
+            IntPtr hwndparent,
+            IntPtr hmenu,
+            IntPtr hinstance,
+            IntPtr lpparam);
 
         public static void InstallColorHooks(Theme theme)
         {
@@ -112,6 +131,15 @@ namespace GitUI.Theming
             _nativeListViewThemeHandle = NativeMethods.OpenThemeData(nativeListViewHandle, listviewClsid);
         }
 
+        public static void InstallCreateWindowHook()
+        {
+            (_createWindowExHook, _createWindowExBypass) =
+                InstallHook<CreateWindowExDelegate>(
+                    "user32.dll",
+                    "CreateWindowExW",
+                    CreateWindowExHook);
+        }
+
         public static void InstallMessageBoxHooks()
         {
             (_messageBoxAHook, _messageBoxABypass) = InstallHook<MessageBoxADelegate>(
@@ -134,6 +162,7 @@ namespace GitUI.Theming
             _drawThemeBackgroundHook?.Dispose();
             _getThemeColorHook?.Dispose();
             _drawThemeTextExHook?.Dispose();
+            _createWindowExHook?.Dispose();
 
             if (_scrollBarThemeHandles != null)
             {
@@ -274,6 +303,19 @@ namespace GitUI.Theming
                 psztext, cchtext,
                 dwtextflags,
                 ref prect, ref poptions);
+        }
+
+        private static IntPtr CreateWindowExHook(
+            int dwexstyle, IntPtr lpclassname, IntPtr lpwindowname, int dwstyle,
+            int x, int y, int nwidth, int nheight,
+            IntPtr hwndparent, IntPtr hmenu, IntPtr hinstance, IntPtr lpparam)
+        {
+            var hwnd = _createWindowExBypass(
+                dwexstyle, lpclassname, lpwindowname, dwstyle,
+                x, y, nwidth, nheight,
+                hwndparent, hmenu, hinstance, lpparam);
+            WindowCreated?.Invoke(hwnd);
+            return hwnd;
         }
     }
 }
