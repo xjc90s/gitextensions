@@ -1,5 +1,7 @@
-﻿using System.Drawing;
+﻿using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 using GitUI;
@@ -21,41 +23,41 @@ namespace GitExtUtils.GitUI.Theming
 
         public static void FixVisualStyle(this Control container)
         {
-            container.FindDescendantsOfType<GroupBox>()
-                .Where(IsFirstTime)
+            container.DescendantsToFix<GroupBox>()
                 .ForEach(SetupGroupBox);
-
-            container.FindDescendantsOfType<Panel>()
-                .Where(IsFirstTime)
+            container.DescendantsToFix<Panel>()
                 .ForEach(SetupPanel);
-            container.FindDescendantsOfType<TabControl>()
-                .Where(IsFirstTime)
+            container.DescendantsToFix<TabControl>()
                 .ForEach(SetupTabControl);
-            container.FindDescendantsOfType<TreeView>()
-                .Where(IsFirstTime)
+            container.DescendantsToFix<TreeView>()
                 .ForEach(SetupTreeView);
-            container.FindDescendantsOfType<DataGridView>()
-                .Where(IsFirstTime)
+            container.DescendantsToFix<DataGridView>()
                 .ForEach(SetupDataGridView);
-            container.FindDescendantsOfType<ButtonBase>()
-                .Where(IsFirstTime)
+            container.DescendantsToFix<ButtonBase>()
                 .ForEach(SetupButtonBase);
-            container.FindDescendantsOfType<ComboBox>()
-                .Where(IsFirstTime)
+            container.DescendantsToFix<ComboBox>()
                 .ForEach(SetupComboBox);
-            container.FindDescendantsOfType<ListView>()
-                .Where(IsFirstTime)
+            container.DescendantsToFix<ListView>()
                 .ForEach(SetupListView);
-            container.FindDescendantsOfType<TextBoxBase>()
-                .Where(IsFirstTime)
+            container.DescendantsToFix<TextBoxBase>()
                 .ForEach(SetupTextBoxBase);
-            container.FindDescendantsOfType<LinkLabel>()
-                .Where(IsFirstTime)
+            container.DescendantsToFix<NumericUpDown>()
+                .ForEach(SetupNumericUpDown);
+            container.DescendantsToFix<LinkLabel>()
                 .ForEach(SetupLinkLabel);
-            container.FindDescendantsOfType<ToolStrip>()
-                .Where(IsFirstTime)
+            container.DescendantsToFix<ToolStrip>()
                 .ForEach(SetupToolStrip);
         }
+
+        private static IEnumerable<TControl> DescendantsToFix<TControl>(this Control c)
+            where TControl : Control
+        {
+            return c.FindDescendantsOfType<TControl>(SkipThemeAware)
+                .Where(IsFirstTime);
+        }
+
+        private static bool SkipThemeAware(Control c) =>
+            c.GetType().GetCustomAttribute<ThemeAwareAttribute>() != null;
 
         private static void SetupDataGridView(DataGridView grid)
         {
@@ -156,6 +158,14 @@ namespace GitExtUtils.GitUI.Theming
 
             textBox.TouchBackColor();
             textBox.EnabledChanged += (s, e) => ((TextBoxBase)s).TouchBackColor();
+        }
+
+        private static void SetupNumericUpDown(NumericUpDown numericUpDown)
+        {
+            if (numericUpDown.BorderStyle != BorderStyle.None)
+            {
+                numericUpDown.BorderStyle = PreferredBorderStyle;
+            }
         }
 
         private static void SetupToolStrip(ToolStrip strip)

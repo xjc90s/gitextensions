@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Runtime.InteropServices;
 using EasyHook;
 using GitCommands;
@@ -30,8 +31,11 @@ namespace GitUI.Theming
         private static LocalHook _drawThemeTextExHook;
         private static LocalHook _createWindowExHook;
 
-        private static HashSet<IntPtr> _scrollBarThemeHandles;
-        private static IntPtr _nativeListViewThemeHandle;
+        private static HashSet<IntPtr> _scrollThemeHandles;
+        private static HashSet<IntPtr> _headerThemeHandles;
+        private static HashSet<IntPtr> _listViewThemeHandles;
+        private static HashSet<IntPtr> _spinThemeHandles;
+        private static HashSet<IntPtr> _editThemeHandles;
 
         public static event Action<IntPtr> WindowCreated;
 
@@ -43,8 +47,10 @@ namespace GitUI.Theming
         [UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
         private delegate IntPtr BrushDelegate(int nindex);
 
-        [UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true, CharSet = CharSet.Ansi)]
-        private delegate int MessageBoxADelegate(IntPtr hwnd, string test, string caption, int type);
+        [UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true,
+            CharSet = CharSet.Ansi)]
+        private delegate int
+            MessageBoxADelegate(IntPtr hwnd, string test, string caption, int type);
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true, CharSet = CharSet.Unicode)]
         private delegate int MessageBoxWDelegate(IntPtr hwnd, string test, string caption, int type);
@@ -117,18 +123,44 @@ namespace GitUI.Theming
                     "DrawThemeTextEx",
                     DrawThemeTextExHook);
 
-            const string scrollbarClsid = "Scrollbar";
-            const string listviewClsid = "Listview";
+            const string scrollClsid = "Scrollbar";
+            const string listViewClsid = "Listview";
+            const string headerClsid = "Header";
+            const string spinClsid = "Spin";
+            const string editClsid = "Edit";
 
-            _scrollBarThemeHandles = new HashSet<IntPtr>
+            _scrollThemeHandles = new HashSet<IntPtr>
             {
-                NativeMethods.OpenThemeData(IntPtr.Zero, scrollbarClsid),
-                NativeMethods.OpenThemeData(new ICSharpCode.TextEditor.TextEditorControl().Handle, scrollbarClsid)
+                NativeMethods.OpenThemeData(IntPtr.Zero, scrollClsid)
             };
 
-            var nativeListViewHandle = new NativeListView().Handle;
-            _scrollBarThemeHandles.Add(NativeMethods.OpenThemeData(nativeListViewHandle, scrollbarClsid));
-            _nativeListViewThemeHandle = NativeMethods.OpenThemeData(nativeListViewHandle, listviewClsid);
+            _headerThemeHandles = new HashSet<IntPtr>
+            {
+                NativeMethods.OpenThemeData(IntPtr.Zero, headerClsid)
+            };
+
+            _listViewThemeHandles = new HashSet<IntPtr>
+            {
+                NativeMethods.OpenThemeData(IntPtr.Zero, listViewClsid)
+            };
+
+            _spinThemeHandles = new HashSet<IntPtr>
+            {
+                NativeMethods.OpenThemeData(IntPtr.Zero, spinClsid)
+            };
+
+            _editThemeHandles = new HashSet<IntPtr>
+            {
+                NativeMethods.OpenThemeData(IntPtr.Zero, editClsid)
+            };
+
+            var editorHandle = new ICSharpCode.TextEditor.TextEditorControl().Handle;
+            _scrollThemeHandles.Add(NativeMethods.OpenThemeData(editorHandle, scrollClsid));
+
+            var listViewHandle = new NativeListView().Handle;
+            _scrollThemeHandles.Add(NativeMethods.OpenThemeData(listViewHandle, scrollClsid));
+            _headerThemeHandles.Add(NativeMethods.OpenThemeData(listViewHandle, headerClsid));
+            _listViewThemeHandles.Add(NativeMethods.OpenThemeData(listViewHandle, listViewClsid));
         }
 
         public static void InstallCreateWindowHook()
@@ -164,21 +196,19 @@ namespace GitUI.Theming
             _drawThemeTextExHook?.Dispose();
             _createWindowExHook?.Dispose();
 
-            if (_scrollBarThemeHandles != null)
+            foreach (IntPtr htheme in (
+                _scrollThemeHandles ?? Enumerable.Empty<IntPtr>()).Concat(
+                _headerThemeHandles ?? Enumerable.Empty<IntPtr>()).Concat(
+                _listViewThemeHandles ?? Enumerable.Empty<IntPtr>()).Concat(
+                _spinThemeHandles ?? Enumerable.Empty<IntPtr>()).Concat(
+                _editThemeHandles ?? Enumerable.Empty<IntPtr>()))
             {
-                foreach (IntPtr htheme in _scrollBarThemeHandles)
-                {
-                    NativeMethods.CloseThemeData(htheme);
-                }
-            }
-
-            if (_nativeListViewThemeHandle != IntPtr.Zero)
-            {
-                NativeMethods.CloseThemeData(_nativeListViewThemeHandle);
+                NativeMethods.CloseThemeData(htheme);
             }
         }
 
-        private static (LocalHook, TDelegate) InstallHook<TDelegate>(string dll, string method, TDelegate hookImpl)
+        private static (LocalHook, TDelegate) InstallHook<TDelegate>(string dll, string method,
+            TDelegate hookImpl)
             where TDelegate : Delegate
         {
             var addr = LocalHook.GetProcAddress(dll, method);
@@ -253,7 +283,28 @@ namespace GitUI.Theming
         {
             if (!AppSettings.UseSystemVisualStyle)
             {
-                if (_scrollBarThemeHandles.Contains(htheme))
+                if (_headerThemeHandles.Contains(htheme))
+                {
+                    if (HeaderRenderer.RenderHeader(hdc, partid, stateid, prect) == 0)
+                    {
+                        return 0;
+                    }
+                }
+                else if (_spinThemeHandles.Contains(htheme))
+                {
+                    if (SpinRenderer.RenderSpin(hdc, partid, stateid, prect) == 0)
+                    {
+                        return 0;
+                    }
+                }
+                else if (_editThemeHandles.Contains(htheme))
+                {
+                    if (EditRenderer.RenderEdit(hdc, partid, stateid, prect) == 0)
+                    {
+                        return 0;
+                    }
+                }
+                else if (_scrollThemeHandles.Contains(htheme))
                 {
                     ScrollBarRenderer.RenderScrollBar(hdc, partid, stateid, prect);
                     return 0;
@@ -264,13 +315,15 @@ namespace GitUI.Theming
             return result;
         }
 
-        private static int GetThemeColorHook(IntPtr htheme, int ipartid, int istateid, int ipropid, out int pcolor)
+        private static int GetThemeColorHook(IntPtr htheme, int ipartid, int istateid, int ipropid,
+            out int pcolor)
         {
             if (!AppSettings.UseSystemVisualStyle)
             {
-                if (_scrollBarThemeHandles.Contains(htheme))
+                if (_scrollThemeHandles.Contains(htheme))
                 {
-                    if (ScrollBarRenderer.GetThemeColor(ipartid, istateid, ipropid, out pcolor) == 0)
+                    if (ScrollBarRenderer.GetThemeColor(ipartid, istateid, ipropid, out pcolor) ==
+                        0)
                     {
                         return 0;
                     }
@@ -287,14 +340,17 @@ namespace GitUI.Theming
             NativeMethods.DT dwtextflags,
             ref NativeMethods.RECT prect, ref NativeMethods.DTTOPTS poptions)
         {
-            if (NativeListViewRenderer.RenderListView(
-                htheme, hdc,
-                partid, stateid,
-                psztext, cchtext,
-                dwtextflags,
-                ref prect, ref poptions) == 0)
+            if (_listViewThemeHandles.Contains(htheme))
             {
-                return 0;
+                if (NativeListViewRenderer.RenderListView(
+                    htheme, hdc,
+                    partid, stateid,
+                    psztext, cchtext,
+                    dwtextflags,
+                    ref prect, ref poptions) == 0)
+                {
+                    return 0;
+                }
             }
 
             return _drawThemeTextExBypass(

@@ -133,10 +133,13 @@
       <DependentUpon>RepoObjectsTree.cs</DependentUpon>
     </Compile>
     <Compile Include="BuildServerIntegration\BuildServerWatcher.cs" />
-    <Compile Include="Theming\ListViewRenderer.cs" />
     <Compile Include="Theming\PathExtension.cs" />
+    <Compile Include="Theming\Renderers\EditRenderer.cs" />
+    <Compile Include="Theming\Renderers\HeaderRenderer.cs" />
+    <Compile Include="Theming\Renderers\ListViewRenderer.cs" />
+    <Compile Include="Theming\Renderers\ScrollBarRenderer.cs" />
+    <Compile Include="Theming\Renderers\SpinRenderer.cs" />
     <Compile Include="Theming\ThemeChangedHandler.cs" />
-    <Compile Include="Theming\ScrollBarRenderer.cs" />
     <Compile Include="Theming\ThemeController.cs" />
     <Compile Include="Theming\ThemeDeployment.cs" />
     <Compile Include="Theming\ThemeEditor.cs" />

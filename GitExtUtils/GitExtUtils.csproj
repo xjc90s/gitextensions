@@ -63,6 +63,7 @@
     <Compile Include="GitUI\Theming\LightnessCorrection.cs" />
     <Compile Include="GitUI\Theming\ComparableExtensions.cs" />
     <Compile Include="GitUI\Theming\TabControlRenderer.cs" />
+    <Compile Include="GitUI\Theming\ThemeAwareAttribute.cs" />
     <Compile Include="GitUI\Theming\ThemeFix.cs" />
     <Compile Include="GitUI\Theming\HslColor.cs" />
     <Compile Include="GitUI\Theming\Theme.cs" />

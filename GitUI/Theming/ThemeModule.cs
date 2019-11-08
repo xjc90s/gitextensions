@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Windows.Controls;
 using System.Windows.Forms;
 using GitCommands;
 using GitExtUtils.GitUI.Theming;

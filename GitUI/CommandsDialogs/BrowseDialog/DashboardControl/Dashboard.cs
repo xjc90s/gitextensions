@@ -12,6 +12,7 @@ using ResourceManager;
 
 namespace GitUI.CommandsDialogs.BrowseDialog.DashboardControl
 {
+    [ThemeAware]
     public partial class Dashboard : GitModuleControl
     {
         private readonly TranslationString _cloneFork = new TranslationString("Clone {0} repository");
@@ -71,6 +72,7 @@ namespace GitUI.CommandsDialogs.BrowseDialog.DashboardControl
             void ApplyTheme()
             {
                 _selectedTheme = ColorHelper.IsLightTheme() ? DashboardTheme.Light : DashboardTheme.Dark;
+                BackgroundImage = _selectedTheme.BackgroundImage;
 
                 BackColor = _selectedTheme.Primary;
                 pnlLogo.BackColor = _selectedTheme.PrimaryVeryDark;
@@ -84,12 +86,13 @@ namespace GitUI.CommandsDialogs.BrowseDialog.DashboardControl
                 userRepositoriesList.HeaderBackColor = _selectedTheme.PrimaryDark;
                 userRepositoriesList.HoverColor = _selectedTheme.PrimaryLight;
                 userRepositoriesList.MainBackColor = _selectedTheme.Primary;
-                BackgroundImage = _selectedTheme.BackgroundImage;
 
                 foreach (var item in flpnlContribute.Controls.OfType<LinkLabel>().Union(flpnlStart.Controls.OfType<LinkLabel>()))
                 {
                     item.LinkColor = _selectedTheme.PrimaryText;
                 }
+
+                Invalidate(true);
             }
 
             void InitDashboardLayout()
