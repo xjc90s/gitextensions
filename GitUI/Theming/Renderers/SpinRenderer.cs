@@ -3,9 +3,11 @@ using System.Drawing;
 
 namespace GitUI.Theming
 {
-    internal static class SpinRenderer
+    internal class SpinRenderer : ThemeRenderer
     {
-        public static int RenderSpin(IntPtr hdc, int partId, int stateId, NativeMethods.RECT prect)
+        protected override string Clsid { get; } = "Spin";
+
+        public override int RenderBackground(IntPtr hdc, int partId, int stateId, Rectangle prect)
         {
             switch ((Parts)partId)
             {
@@ -17,7 +19,7 @@ namespace GitUI.Theming
                     var arrowPolygon = GetUpArrowPolygon(prect);
                     using (var g = Graphics.FromHdcInternal(hdc))
                     {
-                        g.FillRectangle(backBrush, prect.ToRectangle());
+                        g.FillRectangle(backBrush, prect);
                         g.FillPolygon(foreBrush, arrowPolygon);
                     }
 
@@ -31,7 +33,7 @@ namespace GitUI.Theming
                     var arrowPolygon = GetDownArrowPolygon(prect);
                     using (var g = Graphics.FromHdcInternal(hdc))
                     {
-                        g.FillRectangle(backBrush, prect.ToRectangle());
+                        g.FillRectangle(backBrush, prect);
                         g.FillPolygon(foreBrush, arrowPolygon);
                     }
 
@@ -110,7 +112,7 @@ namespace GitUI.Theming
             }
         }
 
-        private static Point[] GetUpArrowPolygon(NativeMethods.RECT prect)
+        private static Point[] GetUpArrowPolygon(Rectangle prect)
         {
             int h = prect.Bottom - prect.Top;
             int w = prect.Right - prect.Left;
@@ -131,7 +133,7 @@ namespace GitUI.Theming
             };
         }
 
-        private static Point[] GetDownArrowPolygon(NativeMethods.RECT prect)
+        private static Point[] GetDownArrowPolygon(Rectangle prect)
         {
             int h = prect.Bottom - prect.Top;
             int w = prect.Right - prect.Left;

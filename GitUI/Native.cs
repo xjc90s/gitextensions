@@ -29,6 +29,9 @@ namespace GitUI
             public int Top;
             public int Right;
             public int Bottom;
+
+            public static implicit operator Rectangle(RECT rect) =>
+                Rectangle.FromLTRB(rect.Left, rect.Top, rect.Right, rect.Bottom);
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -230,9 +233,6 @@ namespace GitUI
 
     internal static class NativeConstantsExtensions
     {
-        public static Rectangle ToRectangle(this NativeMethods.RECT rect) =>
-            Rectangle.FromLTRB(rect.Left, rect.Top, rect.Right, rect.Bottom);
-
         public static Color ToColor(this NativeMethods.COLORREF colorref) =>
             Color.FromArgb(colorref.R, colorref.G, colorref.B);
     }

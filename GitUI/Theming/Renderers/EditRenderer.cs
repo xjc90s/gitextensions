@@ -3,9 +3,11 @@ using System.Drawing;
 
 namespace GitUI.Theming
 {
-    internal static class EditRenderer
+    internal class EditRenderer : ThemeRenderer
     {
-        public static int RenderEdit(IntPtr hdc, int partId, int stateId, NativeMethods.RECT prect)
+        protected override string Clsid { get; } = "Edit";
+
+        public override int RenderBackground(IntPtr hdc, int partId, int stateId, Rectangle prect)
         {
             switch ((Parts)partId)
             {
@@ -17,11 +19,8 @@ namespace GitUI.Theming
                             // fix numeric updown border
                             using (var g = Graphics.FromHdcInternal(hdc))
                             {
-                                g.FillRectangle(SystemBrushes.Window, prect.ToRectangle());
-                                var borderRect = Rectangle.FromLTRB(
-                                    prect.Left, prect.Top,
-                                    prect.Right - 1, prect.Bottom - 1);
-                                g.DrawRectangle(SystemPens.ControlDark, borderRect);
+                                g.FillRectangle(SystemBrushes.Window, prect);
+                                g.DrawRectangle(SystemPens.ControlDark, prect.InclusiveRect());
                             }
 
                             return 0;

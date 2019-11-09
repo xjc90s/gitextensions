@@ -16,9 +16,9 @@ namespace GitExtUtils.GitUI.Theming
             _tabs = tabs;
         }
 
-        private static int ImagePadding { get; } = (int)Math.Round(DpiUtil.Scale(6f));
-        private static int SelectedTabPadding { get; } = (int)Math.Round(DpiUtil.Scale(2f));
-        private static int BorderWidth { get; } = (int)Math.Round(DpiUtil.Scale(1f));
+        private static int ImagePadding { get; } = DpiUtil.Scale(6);
+        private static int SelectedTabPadding { get; } = DpiUtil.Scale(2);
+        private static int BorderWidth { get; } = DpiUtil.Scale(1);
 
         public void Setup()
         {

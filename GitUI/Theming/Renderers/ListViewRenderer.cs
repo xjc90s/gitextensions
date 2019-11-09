@@ -4,9 +4,11 @@ using GitExtUtils.GitUI.Theming;
 
 namespace GitUI.Theming
 {
-    internal static class NativeListViewRenderer
+    internal class ListViewRenderer : ThemeRenderer
     {
-        public static int RenderListView(
+        protected override string Clsid { get; } = "Listview";
+
+        public override int RenderText(
             IntPtr htheme,
             IntPtr hdc,
             int partid, int stateid,
@@ -14,15 +16,19 @@ namespace GitUI.Theming
             NativeMethods.DT dwtextflags,
             ref NativeMethods.RECT prect, ref NativeMethods.DTTOPTS poptions)
         {
-            if ((Parts)partid == Parts.LVP_GROUPHEADER)
+            switch ((Parts)partid)
             {
-                NativeMethods.GetThemeColor(htheme, partid, stateid, poptions.iColorPropId, out var crefText);
-                var color = crefText.ToColor();
-                var adaptedColor = color.AdaptTextColor();
+                case Parts.LVP_GROUPHEADER:
+                {
+                    NativeMethods.GetThemeColor(htheme, partid, stateid, poptions.iColorPropId, out var crefText);
+                    var color = crefText.ToColor();
+                    var adaptedColor = color.AdaptTextColor();
 
-                // do not render, just modify text color
-                poptions.iColorPropId = 0;
-                poptions.crText = ColorTranslator.ToWin32(adaptedColor);
+                    // do not render, just modify text color
+                    poptions.iColorPropId = 0;
+                    poptions.crText = ColorTranslator.ToWin32(adaptedColor);
+                    return 1;
+                }
             }
 
             return 1;

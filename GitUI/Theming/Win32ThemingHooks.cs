@@ -31,11 +31,7 @@ namespace GitUI.Theming
         private static LocalHook _drawThemeTextExHook;
         private static LocalHook _createWindowExHook;
 
-        private static HashSet<IntPtr> _scrollThemeHandles;
-        private static HashSet<IntPtr> _headerThemeHandles;
-        private static HashSet<IntPtr> _listViewThemeHandles;
-        private static HashSet<IntPtr> _spinThemeHandles;
-        private static HashSet<IntPtr> _editThemeHandles;
+        private static List<ThemeRenderer> _renderers;
 
         public static event Action<IntPtr> WindowCreated;
 
@@ -123,44 +119,26 @@ namespace GitUI.Theming
                     "DrawThemeTextEx",
                     DrawThemeTextExHook);
 
-            const string scrollClsid = "Scrollbar";
-            const string listViewClsid = "Listview";
-            const string headerClsid = "Header";
-            const string spinClsid = "Spin";
-            const string editClsid = "Edit";
-
-            _scrollThemeHandles = new HashSet<IntPtr>
-            {
-                NativeMethods.OpenThemeData(IntPtr.Zero, scrollClsid)
-            };
-
-            _headerThemeHandles = new HashSet<IntPtr>
-            {
-                NativeMethods.OpenThemeData(IntPtr.Zero, headerClsid)
-            };
-
-            _listViewThemeHandles = new HashSet<IntPtr>
-            {
-                NativeMethods.OpenThemeData(IntPtr.Zero, listViewClsid)
-            };
-
-            _spinThemeHandles = new HashSet<IntPtr>
-            {
-                NativeMethods.OpenThemeData(IntPtr.Zero, spinClsid)
-            };
-
-            _editThemeHandles = new HashSet<IntPtr>
-            {
-                NativeMethods.OpenThemeData(IntPtr.Zero, editClsid)
-            };
+            _renderers = new List<ThemeRenderer>();
+            var scrollBarRenderer = new ScrollBarRenderer();
+            _renderers.Add(scrollBarRenderer);
+            var listViewRenderer = new ListViewRenderer();
+            _renderers.Add(listViewRenderer);
+            var headerRenderer = new HeaderRenderer();
+            _renderers.Add(headerRenderer);
+            var themeRenderer = new SpinRenderer();
+            _renderers.Add(themeRenderer);
+            var editRenderer = new EditRenderer();
+            _renderers.Add(editRenderer);
+            var treeViewRenderer = new TreeViewRenderer();
+            _renderers.Add(treeViewRenderer);
 
             var editorHandle = new ICSharpCode.TextEditor.TextEditorControl().Handle;
-            _scrollThemeHandles.Add(NativeMethods.OpenThemeData(editorHandle, scrollClsid));
-
             var listViewHandle = new NativeListView().Handle;
-            _scrollThemeHandles.Add(NativeMethods.OpenThemeData(listViewHandle, scrollClsid));
-            _headerThemeHandles.Add(NativeMethods.OpenThemeData(listViewHandle, headerClsid));
-            _listViewThemeHandles.Add(NativeMethods.OpenThemeData(listViewHandle, listViewClsid));
+            scrollBarRenderer.AddThemeData(editorHandle);
+            scrollBarRenderer.AddThemeData(listViewHandle);
+            headerRenderer.AddThemeData(listViewHandle);
+            listViewRenderer.AddThemeData(listViewHandle);
         }
 
         public static void InstallCreateWindowHook()
@@ -196,14 +174,9 @@ namespace GitUI.Theming
             _drawThemeTextExHook?.Dispose();
             _createWindowExHook?.Dispose();
 
-            foreach (IntPtr htheme in (
-                _scrollThemeHandles ?? Enumerable.Empty<IntPtr>()).Concat(
-                _headerThemeHandles ?? Enumerable.Empty<IntPtr>()).Concat(
-                _listViewThemeHandles ?? Enumerable.Empty<IntPtr>()).Concat(
-                _spinThemeHandles ?? Enumerable.Empty<IntPtr>()).Concat(
-                _editThemeHandles ?? Enumerable.Empty<IntPtr>()))
+            foreach (var renderer in _renderers)
             {
-                NativeMethods.CloseThemeData(htheme);
+                renderer.Dispose();
             }
         }
 
@@ -283,36 +256,14 @@ namespace GitUI.Theming
         {
             if (!AppSettings.UseSystemVisualStyle)
             {
-                if (_headerThemeHandles.Contains(htheme))
+                var renderer = _renderers.FirstOrDefault(_ => _.Supports(htheme));
+                if (renderer?.RenderBackground(hdc, partid, stateid, prect) == 0)
                 {
-                    if (HeaderRenderer.RenderHeader(hdc, partid, stateid, prect) == 0)
-                    {
-                        return 0;
-                    }
-                }
-                else if (_spinThemeHandles.Contains(htheme))
-                {
-                    if (SpinRenderer.RenderSpin(hdc, partid, stateid, prect) == 0)
-                    {
-                        return 0;
-                    }
-                }
-                else if (_editThemeHandles.Contains(htheme))
-                {
-                    if (EditRenderer.RenderEdit(hdc, partid, stateid, prect) == 0)
-                    {
-                        return 0;
-                    }
-                }
-                else if (_scrollThemeHandles.Contains(htheme))
-                {
-                    ScrollBarRenderer.RenderScrollBar(hdc, partid, stateid, prect);
                     return 0;
                 }
             }
 
-            int result = _drawThemeBackgroundBypass(htheme, hdc, partid, stateid, ref prect, ref pcliprect);
-            return result;
+            return _drawThemeBackgroundBypass(htheme, hdc, partid, stateid, ref prect, ref pcliprect);
         }
 
         private static int GetThemeColorHook(IntPtr htheme, int ipartid, int istateid, int ipropid,
@@ -320,13 +271,10 @@ namespace GitUI.Theming
         {
             if (!AppSettings.UseSystemVisualStyle)
             {
-                if (_scrollThemeHandles.Contains(htheme))
+                var renderer = _renderers.FirstOrDefault(_ => _.Supports(htheme));
+                if (renderer != null && renderer.GetThemeColor(ipartid, istateid, ipropid, out pcolor) == 0)
                 {
-                    if (ScrollBarRenderer.GetThemeColor(ipartid, istateid, ipropid, out pcolor) ==
-                        0)
-                    {
-                        return 0;
-                    }
+                    return 0;
                 }
             }
 
@@ -340,9 +288,10 @@ namespace GitUI.Theming
             NativeMethods.DT dwtextflags,
             ref NativeMethods.RECT prect, ref NativeMethods.DTTOPTS poptions)
         {
-            if (_listViewThemeHandles.Contains(htheme))
+            if (!AppSettings.UseSystemVisualStyle)
             {
-                if (NativeListViewRenderer.RenderListView(
+                var renderer = _renderers.FirstOrDefault(_ => _.Supports(htheme));
+                if (renderer != null && renderer.RenderText(
                     htheme, hdc,
                     partid, stateid,
                     psztext, cchtext,
@@ -370,6 +319,7 @@ namespace GitUI.Theming
                 dwexstyle, lpclassname, lpwindowname, dwstyle,
                 x, y, nwidth, nheight,
                 hwndparent, hmenu, hinstance, lpparam);
+
             WindowCreated?.Invoke(hwnd);
             return hwnd;
         }

@@ -136,9 +136,12 @@
     <Compile Include="Theming\PathExtension.cs" />
     <Compile Include="Theming\Renderers\EditRenderer.cs" />
     <Compile Include="Theming\Renderers\HeaderRenderer.cs" />
+    <Compile Include="Theming\Renderers\ThemeRenderer.cs" />
     <Compile Include="Theming\Renderers\ListViewRenderer.cs" />
+    <Compile Include="Theming\Renderers\RectangleExtension.cs" />
     <Compile Include="Theming\Renderers\ScrollBarRenderer.cs" />
     <Compile Include="Theming\Renderers\SpinRenderer.cs" />
+    <Compile Include="Theming\Renderers\TreeViewRenderer.cs" />
     <Compile Include="Theming\ThemeChangedHandler.cs" />
     <Compile Include="Theming\ThemeController.cs" />
     <Compile Include="Theming\ThemeDeployment.cs" />

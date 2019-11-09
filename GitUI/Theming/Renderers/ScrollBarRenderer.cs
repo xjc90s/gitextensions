@@ -4,9 +4,11 @@ using System.Windows.Forms.VisualStyles;
 
 namespace GitUI.Theming
 {
-    internal static class ScrollBarRenderer
+    internal class ScrollBarRenderer : ThemeRenderer
     {
-        public static void RenderScrollBar(IntPtr hdc, int partId, int stateId, NativeMethods.RECT prect)
+        protected override string Clsid { get; } = "Scrollbar";
+
+        public override int RenderBackground(IntPtr hdc, int partId, int stateId, Rectangle prect)
         {
             using (var graphics = Graphics.FromHdcInternal(hdc))
             {
@@ -16,15 +18,17 @@ namespace GitUI.Theming
                     DrawArrow(graphics, (States.ArrowButton)stateId, prect);
                 }
             }
+
+            return 0;
         }
 
-        private static void DrawBackground(Graphics g, int partId, int stateId, NativeMethods.RECT prect)
+        private static void DrawBackground(Graphics g, int partId, int stateId, Rectangle prect)
         {
             var backBrush = GetBackBrush(stateId, (Parts)partId);
-            g.FillRectangle(backBrush, prect.ToRectangle());
+            g.FillRectangle(backBrush, prect);
         }
 
-        private static void DrawArrow(Graphics g, States.ArrowButton stateId, NativeMethods.RECT prect)
+        private static void DrawArrow(Graphics g, States.ArrowButton stateId, Rectangle prect)
         {
             var foreBrush = GetArrowButtonForeBrush(stateId);
             var arrowPts = GetArrowPolygon(prect, stateId);
@@ -146,7 +150,7 @@ namespace GitUI.Theming
             }
         }
 
-        private static Point[] GetArrowPolygon(NativeMethods.RECT prect, States.ArrowButton stateId)
+        private static Point[] GetArrowPolygon(Rectangle prect, States.ArrowButton stateId)
         {
             switch (stateId)
             {
@@ -181,7 +185,7 @@ namespace GitUI.Theming
             }
         }
 
-        private static Point[] GetUpArrowPolygon(NativeMethods.RECT prect)
+        private static Point[] GetUpArrowPolygon(Rectangle prect)
         {
             int h = prect.Bottom - prect.Top;
             int w = prect.Right - prect.Left;
@@ -202,7 +206,7 @@ namespace GitUI.Theming
             };
         }
 
-        private static Point[] GetDownArrowPolygon(NativeMethods.RECT prect)
+        private static Point[] GetDownArrowPolygon(Rectangle prect)
         {
             int h = prect.Bottom - prect.Top;
             int w = prect.Right - prect.Left;
@@ -223,7 +227,7 @@ namespace GitUI.Theming
             };
         }
 
-        private static Point[] GetRightArrowPolygon(NativeMethods.RECT prect)
+        private static Point[] GetRightArrowPolygon(Rectangle prect)
         {
             int h = prect.Bottom - prect.Top;
             int w = prect.Right - prect.Left;
@@ -244,7 +248,7 @@ namespace GitUI.Theming
             };
         }
 
-        private static Point[] GetLeftArrowPolygon(NativeMethods.RECT prect)
+        private static Point[] GetLeftArrowPolygon(Rectangle prect)
         {
             int h = prect.Bottom - prect.Top;
             int w = prect.Right - prect.Left;
@@ -266,7 +270,7 @@ namespace GitUI.Theming
             };
         }
 
-        public static int GetThemeColor(int ipartid, int istateid, int ipropid, out int pcolor)
+        public override int GetThemeColor(int ipartid, int istateid, int ipropid, out int pcolor)
         {
             if ((Parts)ipartid == Parts.SBP_UNDOCUMENTED && (ColorProperty)ipropid == ColorProperty.FillColor)
             {

@@ -3,9 +3,11 @@ using System.Drawing;
 
 namespace GitUI.Theming
 {
-    internal static class HeaderRenderer
+    internal class HeaderRenderer : ThemeRenderer
     {
-        public static int RenderHeader(IntPtr hdc, int partId, int stateId, NativeMethods.RECT prect)
+        protected override string Clsid { get; } = "Header";
+
+        public override int RenderBackground(IntPtr hdc, int partId, int stateId, Rectangle prect)
         {
             switch ((Parts)partId)
             {
@@ -13,7 +15,7 @@ namespace GitUI.Theming
                 {
                     using (var g = Graphics.FromHdcInternal(hdc))
                     {
-                        g.FillRectangle(SystemBrushes.Control, prect.ToRectangle());
+                        g.FillRectangle(SystemBrushes.Control, prect);
                     }
 
                     return 0;
@@ -24,7 +26,7 @@ namespace GitUI.Theming
                     using (var g = Graphics.FromHdcInternal(hdc))
                     {
                         var backBrush = GetBackBrush((State.Item)stateId);
-                        g.FillRectangle(backBrush, prect.ToRectangle());
+                        g.FillRectangle(backBrush, prect);
                         g.DrawLine(SystemPens.ControlDark,
                             new Point(prect.Right - 2, prect.Top),
                             new Point(prect.Right - 2, prect.Bottom - 1));
@@ -37,7 +39,7 @@ namespace GitUI.Theming
                 {
                     using (var g = Graphics.FromHdcInternal(hdc))
                     {
-                        g.FillRectangle(SystemBrushes.Control, prect.ToRectangle());
+                        g.FillRectangle(SystemBrushes.Control, prect);
                         var arrowPoints = GetArrowPolygon((State.SortArrow)stateId, prect);
                         g.FillPolygon(SystemBrushes.ControlDarkDark, arrowPoints);
                     }
@@ -57,7 +59,7 @@ namespace GitUI.Theming
             }
         }
 
-        private static Point[] GetArrowPolygon(State.SortArrow stateId, NativeMethods.RECT prect)
+        private static Point[] GetArrowPolygon(State.SortArrow stateId, Rectangle prect)
         {
             switch (stateId)
             {
@@ -95,7 +97,7 @@ namespace GitUI.Theming
             }
         }
 
-        private static Point[] GetUpArrowPolygon(NativeMethods.RECT prect)
+        private static Point[] GetUpArrowPolygon(Rectangle prect)
         {
             int h = prect.Bottom - prect.Top;
             int w = prect.Right - prect.Left;
@@ -116,7 +118,7 @@ namespace GitUI.Theming
             };
         }
 
-        private static Point[] GetDownArrowPolygon(NativeMethods.RECT prect)
+        private static Point[] GetDownArrowPolygon(Rectangle prect)
         {
             int h = prect.Bottom - prect.Top;
             int w = prect.Right - prect.Left;
