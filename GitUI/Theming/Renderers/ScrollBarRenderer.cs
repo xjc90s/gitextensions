@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms.VisualStyles;
+using GitExtUtils.GitUI;
 
 namespace GitUI.Theming
 {
@@ -8,7 +9,8 @@ namespace GitUI.Theming
     {
         protected override string Clsid { get; } = "Scrollbar";
 
-        public override int RenderBackground(IntPtr hdc, int partId, int stateId, Rectangle prect)
+        public override int RenderBackground(IntPtr hdc, int partId, int stateId, Rectangle prect,
+            ref NativeMethods.RECT pcliprect)
         {
             using (var graphics = Graphics.FromHdcInternal(hdc))
             {
@@ -30,9 +32,13 @@ namespace GitUI.Theming
 
         private static void DrawArrow(Graphics g, States.ArrowButton stateId, Rectangle prect)
         {
-            var foreBrush = GetArrowButtonForeBrush(stateId);
+            var foreColor = GetArrowButtonForeColor(stateId);
             var arrowPts = GetArrowPolygon(prect, stateId);
-            g.FillPolygon(foreBrush, arrowPts);
+            using (var pen = new Pen(foreColor, DpiUtil.Scale(2)))
+            using (new HighQualityScope(g))
+            {
+                g.DrawLines(pen, arrowPts);
+            }
         }
 
         private static Brush GetBackBrush(int stateId, Parts partId)
@@ -117,7 +123,7 @@ namespace GitUI.Theming
             }
         }
 
-        private static Brush GetArrowButtonForeBrush(States.ArrowButton stateId)
+        private static Color GetArrowButtonForeColor(States.ArrowButton stateId)
         {
             switch (stateId)
             {
@@ -125,13 +131,13 @@ namespace GitUI.Theming
                 case States.ArrowButton.ABS_DOWNPRESSED:
                 case States.ArrowButton.ABS_LEFTPRESSED:
                 case States.ArrowButton.ABS_RIGHTPRESSED:
-                    return SystemBrushes.Control;
+                    return SystemColors.Control;
 
                 case States.ArrowButton.ABS_UPDISABLED:
                 case States.ArrowButton.ABS_DOWNDISABLED:
                 case States.ArrowButton.ABS_LEFTDISABLED:
                 case States.ArrowButton.ABS_RIGHTDISABLED:
-                    return SystemBrushes.GrayText;
+                    return SystemColors.ControlDark;
 
                 // case States.ArrowButton.ABS_UPHOT:
                 // case States.ArrowButton.ABS_DOWNHOT:
@@ -146,7 +152,7 @@ namespace GitUI.Theming
                 // case States.ArrowButton.ABS_LEFTHOVER:
                 // case States.ArrowButton.ABS_RIGHTHOVER:
                 default:
-                    return SystemBrushes.ControlDarkDark;
+                    return SystemColors.ControlDarkDark;
             }
         }
 
@@ -187,16 +193,14 @@ namespace GitUI.Theming
 
         private static Point[] GetUpArrowPolygon(Rectangle prect)
         {
-            int h = prect.Bottom - prect.Top;
-            int w = prect.Right - prect.Left;
-            int arrowHeight = (int)Math.Ceiling(0.25f * h);
-            int arrowWidth = (int)Math.Ceiling(0.5f * w);
-            int arrowLeft = prect.Left + ((w - arrowWidth) / 2);
-            int arrowTop = prect.Top + ((h - arrowHeight) / 2);
-            int x1 = arrowLeft - 1;
-            int x2 = arrowLeft + (int)Math.Floor(0.5f * arrowWidth);
+            int arrowHeight = prect.Height / 4;
+            int arrowWidth = arrowHeight * 2;
+            int arrowLeft = prect.Left + ((prect.Width - arrowWidth) / 2);
+            int arrowTop = prect.Top + ((prect.Height - arrowHeight) / 2);
+            int x1 = arrowLeft;
+            int x2 = arrowLeft + (arrowWidth / 2);
             int x3 = arrowLeft + arrowWidth;
-            int y1 = arrowTop - 1;
+            int y1 = arrowTop;
             int y2 = arrowTop + arrowHeight;
             return new[]
             {
@@ -208,14 +212,12 @@ namespace GitUI.Theming
 
         private static Point[] GetDownArrowPolygon(Rectangle prect)
         {
-            int h = prect.Bottom - prect.Top;
-            int w = prect.Right - prect.Left;
-            int arrowHeight = (int)Math.Ceiling(0.25f * h);
-            int arrowWidth = (int)Math.Ceiling(0.5f * w);
-            int arrowLeft = prect.Left + ((w - arrowWidth) / 2);
-            int arrowTop = prect.Top + ((h - arrowHeight) / 2);
+            int arrowHeight = prect.Height / 4;
+            int arrowWidth = arrowHeight * 2;
+            int arrowLeft = prect.Left + ((prect.Width - arrowWidth) / 2);
+            int arrowTop = prect.Top + ((prect.Height - arrowHeight) / 2);
             int x1 = arrowLeft;
-            int x2 = arrowLeft + (int)Math.Floor(0.5f * arrowWidth);
+            int x2 = arrowLeft + (arrowWidth / 2);
             int x3 = arrowLeft + arrowWidth;
             int y1 = arrowTop;
             int y2 = arrowTop + arrowHeight;
@@ -229,17 +231,15 @@ namespace GitUI.Theming
 
         private static Point[] GetRightArrowPolygon(Rectangle prect)
         {
-            int h = prect.Bottom - prect.Top;
-            int w = prect.Right - prect.Left;
-            int arrowHeight = (int)Math.Ceiling(0.5f * h);
-            int arrowWidth = (int)Math.Ceiling(0.25f * w);
-            int arrowLeft = prect.Left + ((w - arrowWidth) / 2);
-            int arrowTop = prect.Top + ((h - arrowHeight) / 2);
+            int arrowWidth = prect.Width / 4;
+            int arrowHeight = arrowWidth * 2;
+            int arrowLeft = prect.Left + ((prect.Width - arrowWidth) / 2);
+            int arrowTop = prect.Top + ((prect.Height - arrowHeight) / 2);
             int x1 = arrowLeft;
             int x2 = arrowLeft + arrowWidth;
             int y1 = arrowTop;
-            int y2 = arrowTop + (int)Math.Ceiling(0.5f * arrowHeight);
-            int y3 = arrowTop + arrowHeight + 1;
+            int y2 = arrowTop + (arrowHeight / 2);
+            int y3 = arrowTop + arrowHeight;
             return new[]
             {
                 new Point(x1, y1),
@@ -250,23 +250,21 @@ namespace GitUI.Theming
 
         private static Point[] GetLeftArrowPolygon(Rectangle prect)
         {
-            int h = prect.Bottom - prect.Top;
-            int w = prect.Right - prect.Left;
-            int arrowHeight = (int)Math.Ceiling(0.5f * h);
-            int arrowWidth = (int)Math.Ceiling(0.25f * w);
-            int arrowLeft = prect.Left + ((w - arrowWidth) / 2);
-            int arrowTop = prect.Top + ((h - arrowHeight) / 2);
+            int arrowWidth = prect.Width / 4;
+            int arrowHeight = arrowWidth * 2;
+            int arrowLeft = prect.Left + ((prect.Width - arrowWidth) / 2);
+            int arrowTop = prect.Top + ((prect.Height - arrowHeight) / 2);
             int x1 = arrowLeft;
             int x2 = arrowLeft + arrowWidth;
             int y1 = arrowTop;
-            int y2 = arrowTop + (int)Math.Ceiling(0.5f * arrowHeight);
-            int y3 = arrowTop + arrowHeight + 1;
+            int y2 = arrowTop + (arrowHeight / 2);
+            int y3 = arrowTop + arrowHeight;
 
             return new[]
             {
                 new Point(x2, y1),
                 new Point(x1, y2),
-                new Point(x2, y3),
+                new Point(x2, y3)
             };
         }
 

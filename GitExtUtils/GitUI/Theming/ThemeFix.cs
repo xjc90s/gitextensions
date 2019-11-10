@@ -24,29 +24,31 @@ namespace GitExtUtils.GitUI.Theming
         public static void FixVisualStyle(this Control container)
         {
             container.DescendantsToFix<GroupBox>()
-                .ForEach(SetupGroupBox);
-            container.DescendantsToFix<Panel>()
-                .ForEach(SetupPanel);
-            container.DescendantsToFix<TabControl>()
-                .ForEach(SetupTabControl);
+                 .ForEach(SetupGroupBox);
             container.DescendantsToFix<TreeView>()
                 .ForEach(SetupTreeView);
-            container.DescendantsToFix<DataGridView>()
-                .ForEach(SetupDataGridView);
-            container.DescendantsToFix<ButtonBase>()
-                .ForEach(SetupButtonBase);
-            container.DescendantsToFix<ComboBox>()
-                .ForEach(SetupComboBox);
-            container.DescendantsToFix<ListView>()
-                .ForEach(SetupListView);
-            container.DescendantsToFix<TextBoxBase>()
-                .ForEach(SetupTextBoxBase);
-            container.DescendantsToFix<NumericUpDown>()
-                .ForEach(SetupNumericUpDown);
-            container.DescendantsToFix<LinkLabel>()
-                .ForEach(SetupLinkLabel);
-            container.DescendantsToFix<ToolStrip>()
-                .ForEach(SetupToolStrip);
+
+            // container.DescendantsToFix<Panel>()
+            //     .ForEach(SetupPanel);
+            // container.DescendantsToFix<TabControl>()
+            //     .ForEach(SetupTabControl);
+
+            // container.DescendantsToFix<DataGridView>()
+            //     .ForEach(SetupDataGridView);
+            // container.DescendantsToFix<ButtonBase>()
+            //     .ForEach(SetupButtonBase);
+            // container.DescendantsToFix<ComboBox>()
+            //     .ForEach(SetupComboBox);
+            // container.DescendantsToFix<ListView>()
+            //     .ForEach(SetupListView);
+            // container.DescendantsToFix<TextBoxBase>()
+            //     .ForEach(SetupTextBoxBase);
+            // container.DescendantsToFix<NumericUpDown>()
+            //     .ForEach(SetupNumericUpDown);
+            // container.DescendantsToFix<LinkLabel>()
+            //     .ForEach(SetupLinkLabel);
+            // container.DescendantsToFix<ToolStrip>()
+            //     .ForEach(SetupToolStrip);
         }
 
         private static IEnumerable<TControl> DescendantsToFix<TControl>(this Control c)
@@ -222,18 +224,7 @@ namespace GitExtUtils.GitUI.Theming
             var unused = view.Handle; // force handle creation
             view.TouchBackColor();
             view.TouchForeColor();
-            if (view.LineColor == Color.Black || view.LineColor == Color.Empty)
-            {
-                view.LineColor = SystemColors.WindowText;
-            }
-            else if (view.LineColor.IsKnownColor)
-            {
-                view.LineColor = view.LineColor;
-            }
-
-            // semi-transparent images are blended multiple times
-            // when toggling HotTrack state multiple times
-            view.HotTracking = false;
+            view.LineColor = SystemColors.ControlDark;
         }
 
         private static void SetupButtonBase(this ButtonBase btn)
@@ -268,14 +259,6 @@ namespace GitExtUtils.GitUI.Theming
 
         private static void SetupComboBox(this ComboBox menu)
         {
-            menu.FlatStyle = PreferredFlatStyle;
-            menu.TouchBackColor(rudely: true);
-
-            menu.EnabledChanged += (s, e) =>
-            {
-                var m = (ComboBox)s;
-                m.TouchBackColor(rudely: true);
-            };
         }
 
         private static void TouchBackColor(this Control c, bool rudely = false)
@@ -292,8 +275,19 @@ namespace GitExtUtils.GitUI.Theming
             }
         }
 
-        private static void TouchForeColor(this Control c) =>
-            c.ForeColor = c.ForeColor;
+        private static void TouchForeColor(this Control c, bool rudely = false)
+        {
+            if (rudely)
+            {
+                var original = c.ForeColor;
+                c.ForeColor = Color.Magenta;
+                c.ForeColor = original;
+            }
+            else
+            {
+                c.ForeColor = c.ForeColor;
+            }
+        }
 
         private static bool IsFirstTime(IWin32Window menu)
         {

@@ -7,7 +7,8 @@ namespace GitUI.Theming
     {
         protected override string Clsid { get; } = "Edit";
 
-        public override int RenderBackground(IntPtr hdc, int partId, int stateId, Rectangle prect)
+        public override int RenderBackground(IntPtr hdc, int partId, int stateId, Rectangle prect,
+            ref NativeMethods.RECT pcliprect)
         {
             switch ((Parts)partId)
             {
@@ -20,7 +21,7 @@ namespace GitUI.Theming
                             using (var g = Graphics.FromHdcInternal(hdc))
                             {
                                 g.FillRectangle(SystemBrushes.Window, prect);
-                                g.DrawRectangle(SystemPens.ControlDark, prect.InclusiveRect());
+                                g.DrawRectangle(SystemPens.ControlDark, prect.Inclusive());
                             }
 
                             return 0;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Windows.Forms.VisualStyles;
 
 namespace GitUI.Theming
 {
@@ -7,7 +8,8 @@ namespace GitUI.Theming
     {
         protected override string Clsid { get; } = "Header";
 
-        public override int RenderBackground(IntPtr hdc, int partId, int stateId, Rectangle prect)
+        public override int RenderBackground(IntPtr hdc, int partId, int stateId, Rectangle prect,
+            ref NativeMethods.RECT pcliprect)
         {
             switch ((Parts)partId)
             {
@@ -28,8 +30,8 @@ namespace GitUI.Theming
                         var backBrush = GetBackBrush((State.Item)stateId);
                         g.FillRectangle(backBrush, prect);
                         g.DrawLine(SystemPens.ControlDark,
-                            new Point(prect.Right - 2, prect.Top),
-                            new Point(prect.Right - 2, prect.Bottom - 1));
+                            new Point(prect.Right - 1, prect.Top),
+                            new Point(prect.Right - 1, prect.Bottom - 1));
                     }
 
                     return 0;
@@ -37,11 +39,14 @@ namespace GitUI.Theming
 
                 case Parts.HP_HEADERSORTARROW:
                 {
+                    var arrowPoints = GetArrowPolygon((State.SortArrow)stateId, prect);
                     using (var g = Graphics.FromHdcInternal(hdc))
                     {
                         g.FillRectangle(SystemBrushes.Control, prect);
-                        var arrowPoints = GetArrowPolygon((State.SortArrow)stateId, prect);
-                        g.FillPolygon(SystemBrushes.ControlDarkDark, arrowPoints);
+                        using (new HighQualityScope(g))
+                        {
+                            g.FillPolygon(SystemBrushes.ControlDarkDark, arrowPoints);
+                        }
                     }
 
                     return 0;
@@ -57,6 +62,25 @@ namespace GitUI.Theming
                     return 1;
                 }
             }
+        }
+
+        public override int GetThemeColor(int ipartid, int istateid, int ipropid, out int pcolor)
+        {
+            switch ((Parts)ipartid)
+            {
+                case Parts.HP_HEADERITEM:
+                    switch ((ColorProperty)ipropid)
+                    {
+                        case ColorProperty.TextColor:
+                            pcolor = ColorTranslator.ToWin32(SystemColors.ControlText);
+                            return 0;
+                    }
+
+                    break;
+            }
+
+            pcolor = 0;
+            return 1;
         }
 
         private static Point[] GetArrowPolygon(State.SortArrow stateId, Rectangle prect)
@@ -99,16 +123,14 @@ namespace GitUI.Theming
 
         private static Point[] GetUpArrowPolygon(Rectangle prect)
         {
-            int h = prect.Bottom - prect.Top;
-            int w = prect.Right - prect.Left;
-            int arrowHeight = (int)Math.Ceiling(0.25f * h);
-            int arrowWidth = (int)Math.Ceiling(0.5f * w);
-            int arrowLeft = prect.Left + ((w - arrowWidth) / 2);
-            int arrowTop = prect.Top + ((h - arrowHeight) / 2);
-            int x1 = arrowLeft - 1;
-            int x2 = arrowLeft + (int)Math.Floor(0.5f * arrowWidth);
+            int arrowHeight = prect.Height / 4;
+            int arrowWidth = arrowHeight * 2;
+            int arrowLeft = prect.Left + ((prect.Width - arrowWidth) / 2);
+            int arrowTop = prect.Top + ((prect.Height - arrowHeight) / 2);
+            int x1 = arrowLeft;
+            int x2 = arrowLeft + (arrowWidth / 2);
             int x3 = arrowLeft + arrowWidth;
-            int y1 = arrowTop - 1;
+            int y1 = arrowTop;
             int y2 = arrowTop + arrowHeight;
             return new[]
             {
@@ -120,14 +142,12 @@ namespace GitUI.Theming
 
         private static Point[] GetDownArrowPolygon(Rectangle prect)
         {
-            int h = prect.Bottom - prect.Top;
-            int w = prect.Right - prect.Left;
-            int arrowHeight = (int)Math.Ceiling(0.25f * h);
-            int arrowWidth = (int)Math.Ceiling(0.5f * w);
-            int arrowLeft = prect.Left + ((w - arrowWidth) / 2);
-            int arrowTop = prect.Top + ((h - arrowHeight) / 2);
+            int arrowHeight = prect.Height / 4;
+            int arrowWidth = arrowHeight * 2;
+            int arrowLeft = prect.Left + ((prect.Width - arrowWidth) / 2);
+            int arrowTop = prect.Top + ((prect.Height - arrowHeight) / 2);
             int x1 = arrowLeft;
-            int x2 = arrowLeft + (int)Math.Floor(0.5f * arrowWidth);
+            int x2 = arrowLeft + (arrowWidth / 2);
             int x3 = arrowLeft + arrowWidth;
             int y1 = arrowTop;
             int y2 = arrowTop + arrowHeight;

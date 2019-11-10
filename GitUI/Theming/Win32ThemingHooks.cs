@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -19,6 +18,7 @@ namespace GitUI.Theming
         private static MessageBoxWDelegate _messageBoxWBypass;
         private static DrawThemeBackgroundDelegate _drawThemeBackgroundBypass;
         private static GetThemeColorDelegate _getThemeColorBypass;
+        private static DrawThemeTextDelegate _drawThemeTextBypass;
         private static DrawThemeTextExDelegate _drawThemeTextExBypass;
         private static CreateWindowExDelegate _createWindowExBypass;
 
@@ -28,10 +28,11 @@ namespace GitUI.Theming
         private static LocalHook _messageBoxWHook;
         private static LocalHook _drawThemeBackgroundHook;
         private static LocalHook _getThemeColorHook;
+        private static LocalHook _drawThemeTextHook;
         private static LocalHook _drawThemeTextExHook;
         private static LocalHook _createWindowExHook;
 
-        private static List<ThemeRenderer> _renderers;
+        private static ThemeRenderer[] _renderers;
 
         public static event Action<IntPtr> WindowCreated;
 
@@ -61,6 +62,16 @@ namespace GitUI.Theming
         private delegate int GetThemeColorDelegate(IntPtr htheme,
             int ipartid, int istateid, int ipropid,
             out int pcolor);
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true, CharSet = CharSet.Unicode)]
+        private delegate int DrawThemeTextDelegate(
+            IntPtr htheme, IntPtr hdc,
+            int partid, int stateId,
+            string psztext,
+            int cchtext,
+            NativeMethods.DT dwtextflags,
+            int dwtextflags2,
+            ref NativeMethods.RECT prect);
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true, CharSet = CharSet.Unicode)]
         private delegate int DrawThemeTextExDelegate(
@@ -113,32 +124,43 @@ namespace GitUI.Theming
                     "GetThemeColor",
                     GetThemeColorHook);
 
+            (_drawThemeTextHook, _drawThemeTextBypass) =
+                InstallHook<DrawThemeTextDelegate>(
+                    "uxtheme.dll",
+                    "DrawThemeText",
+                    DrawThemeTextHook);
+
             (_drawThemeTextExHook, _drawThemeTextExBypass) =
                 InstallHook<DrawThemeTextExDelegate>(
                     "uxtheme.dll",
                     "DrawThemeTextEx",
                     DrawThemeTextExHook);
 
-            _renderers = new List<ThemeRenderer>();
-            var scrollBarRenderer = new ScrollBarRenderer();
-            _renderers.Add(scrollBarRenderer);
-            var listViewRenderer = new ListViewRenderer();
-            _renderers.Add(listViewRenderer);
-            var headerRenderer = new HeaderRenderer();
-            _renderers.Add(headerRenderer);
-            var themeRenderer = new SpinRenderer();
-            _renderers.Add(themeRenderer);
-            var editRenderer = new EditRenderer();
-            _renderers.Add(editRenderer);
-            var treeViewRenderer = new TreeViewRenderer();
-            _renderers.Add(treeViewRenderer);
+            ScrollBarRenderer scrollBarRenderer;
+            ListViewRenderer listViewRenderer;
+            HeaderRenderer headerRenderer;
+            TreeViewRenderer treeViewRenderer;
+
+            _renderers = new ThemeRenderer[]
+            {
+                scrollBarRenderer = new ScrollBarRenderer(),
+                listViewRenderer = new ListViewRenderer(),
+                headerRenderer = new HeaderRenderer(),
+                treeViewRenderer = new TreeViewRenderer(),
+                new EditRenderer(),
+                new SpinRenderer(),
+                new ComboBoxRenderer(),
+                new ButtonRenderer(),
+            };
 
             var editorHandle = new ICSharpCode.TextEditor.TextEditorControl().Handle;
             var listViewHandle = new NativeListView().Handle;
+            var treeViewHandle = new NativeTreeView().Handle;
             scrollBarRenderer.AddThemeData(editorHandle);
             scrollBarRenderer.AddThemeData(listViewHandle);
             headerRenderer.AddThemeData(listViewHandle);
             listViewRenderer.AddThemeData(listViewHandle);
+            treeViewRenderer.AddThemeData(treeViewHandle);
         }
 
         public static void InstallCreateWindowHook()
@@ -171,6 +193,7 @@ namespace GitUI.Theming
             _messageBoxWHook?.Dispose();
             _drawThemeBackgroundHook?.Dispose();
             _getThemeColorHook?.Dispose();
+            _drawThemeTextHook?.Dispose();
             _drawThemeTextExHook?.Dispose();
             _createWindowExHook?.Dispose();
 
@@ -257,7 +280,7 @@ namespace GitUI.Theming
             if (!AppSettings.UseSystemVisualStyle)
             {
                 var renderer = _renderers.FirstOrDefault(_ => _.Supports(htheme));
-                if (renderer?.RenderBackground(hdc, partid, stateid, prect) == 0)
+                if (renderer?.RenderBackground(hdc, partid, stateid, prect, ref pcliprect) == 0)
                 {
                     return 0;
                 }
@@ -281,6 +304,48 @@ namespace GitUI.Theming
             return _getThemeColorBypass(htheme, ipartid, istateid, ipropid, out pcolor);
         }
 
+        private static int DrawThemeTextHook(
+            IntPtr htheme, IntPtr hdc,
+            int partid, int stateid,
+            string psztext, int cchtext,
+            NativeMethods.DT dwtextflags, int dwtextflags2, ref NativeMethods.RECT prect)
+        {
+            if (!AppSettings.UseSystemVisualStyle)
+            {
+                var renderer = _renderers.FirstOrDefault(_ => _.Supports(htheme));
+                if (renderer != null)
+                {
+                    if (renderer.ForceUseRenderTextEx)
+                    {
+                        NativeMethods.DTTOPTS poptions = new NativeMethods.DTTOPTS
+                        {
+                            dwSize = Marshal.SizeOf<NativeMethods.DTTOPTS>()
+                        };
+
+                        return _drawThemeTextExBypass(htheme, hdc,
+                            partid, stateid,
+                            psztext, cchtext, dwtextflags,
+                            ref prect, ref poptions);
+                    }
+
+                    if (renderer.RenderText(
+                        htheme, hdc,
+                        partid, stateid,
+                        psztext, cchtext,
+                        dwtextflags, dwtextflags2, prect) == 0)
+                    {
+                        return 0;
+                    }
+                }
+            }
+
+            return _drawThemeTextBypass(
+                htheme, hdc,
+                partid, stateid,
+                psztext, cchtext,
+                dwtextflags, dwtextflags2, ref prect);
+        }
+
         private static int DrawThemeTextExHook(
             IntPtr htheme, IntPtr hdc,
             int partid, int stateid,
@@ -291,12 +356,12 @@ namespace GitUI.Theming
             if (!AppSettings.UseSystemVisualStyle)
             {
                 var renderer = _renderers.FirstOrDefault(_ => _.Supports(htheme));
-                if (renderer != null && renderer.RenderText(
+                if (renderer != null && renderer.RenderTextEx(
                     htheme, hdc,
                     partid, stateid,
                     psztext, cchtext,
                     dwtextflags,
-                    ref prect, ref poptions) == 0)
+                    prect, ref poptions) == 0)
                 {
                     return 0;
                 }

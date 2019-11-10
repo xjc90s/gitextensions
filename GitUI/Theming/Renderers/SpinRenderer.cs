@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using GitExtUtils.GitUI;
 
 namespace GitUI.Theming
 {
@@ -7,20 +8,24 @@ namespace GitUI.Theming
     {
         protected override string Clsid { get; } = "Spin";
 
-        public override int RenderBackground(IntPtr hdc, int partId, int stateId, Rectangle prect)
+        public override int RenderBackground(IntPtr hdc, int partId, int stateId, Rectangle prect,
+            ref NativeMethods.RECT pcliprect)
         {
             switch ((Parts)partId)
             {
                 case Parts.SPNP_UP:
                 {
                     var backBrush = GetBackBrush((State.Up)stateId);
-
-                    var foreBrush = GetForeBrush((State.Up)stateId);
-                    var arrowPolygon = GetUpArrowPolygon(prect);
+                    var foreColor = GetForeColor((State.Up)stateId);
+                    var arrowPolygon = GetArrowPolygon(prect, down: false);
                     using (var g = Graphics.FromHdcInternal(hdc))
                     {
                         g.FillRectangle(backBrush, prect);
-                        g.FillPolygon(foreBrush, arrowPolygon);
+                        using (var pen = new Pen(foreColor, DpiUtil.Scale(2)))
+                        using (new HighQualityScope(g))
+                        {
+                            g.DrawLines(pen, arrowPolygon);
+                        }
                     }
 
                     return 0;
@@ -29,12 +34,16 @@ namespace GitUI.Theming
                 case Parts.SPNP_DOWN:
                 {
                     var backBrush = GetBackBrush((State.Down)stateId);
-                    var foreBrush = GetForeBrush((State.Down)stateId);
-                    var arrowPolygon = GetDownArrowPolygon(prect);
+                    var foreColor = GetForeColor((State.Down)stateId);
+                    var arrowPolygon = GetArrowPolygon(prect, down: true);
                     using (var g = Graphics.FromHdcInternal(hdc))
                     {
                         g.FillRectangle(backBrush, prect);
-                        g.FillPolygon(foreBrush, arrowPolygon);
+                        using (var pen = new Pen(foreColor, DpiUtil.Scale(2)))
+                        using (new HighQualityScope(g))
+                        {
+                            g.DrawLines(pen, arrowPolygon);
+                        }
                     }
 
                     return 0;
@@ -78,80 +87,64 @@ namespace GitUI.Theming
             }
         }
 
-        private static Brush GetForeBrush(State.Up stateId)
+        private static Color GetForeColor(State.Up stateId)
         {
             switch (stateId)
             {
                 case State.Up.UPS_PRESSED:
-                    return SystemBrushes.Control;
+                    return SystemColors.Control;
 
                 case State.Up.UPS_DISABLED:
-                    return SystemBrushes.GrayText;
+                    return SystemColors.GrayText;
 
                 // case States.Up.UPS_NORMAL:
                 // case States.Up.UPS_HOT:
                 default:
-                    return SystemBrushes.ControlDarkDark;
+                    return SystemColors.ControlDarkDark;
             }
         }
 
-        private static Brush GetForeBrush(State.Down stateId)
+        private static Color GetForeColor(State.Down stateId)
         {
             switch (stateId)
             {
                 case State.Down.DNS_PRESSED:
-                    return SystemBrushes.Control;
+                    return SystemColors.Control;
 
                 case State.Down.DNS_DISABLED:
-                    return SystemBrushes.GrayText;
+                    return SystemColors.GrayText;
 
                 // case States.Down.DNS_NORMAL:
                 // case States.Down.DNS_HOT:
                 default:
-                    return SystemBrushes.ControlDarkDark;
+                    return SystemColors.ControlDarkDark;
             }
         }
 
-        private static Point[] GetUpArrowPolygon(Rectangle prect)
+        private static Point[] GetArrowPolygon(Rectangle prect, bool down)
         {
-            int h = prect.Bottom - prect.Top;
-            int w = prect.Right - prect.Left;
-            int arrowHeight = (int)Math.Ceiling(0.25f * h);
+            int arrowHeight = prect.Height / 3;
             int arrowWidth = 2 * arrowHeight;
-            int arrowLeft = prect.Left + ((w - arrowWidth) / 2);
-            int arrowTop = prect.Top + ((h - arrowHeight) / 2);
-            int x1 = arrowLeft - 1;
-            int x2 = arrowLeft + (int)Math.Floor(0.5f * arrowWidth);
-            int x3 = arrowLeft + arrowWidth;
-            int y1 = arrowTop - 1;
-            int y2 = arrowTop + arrowHeight;
-            return new[]
-            {
-                new Point(x1, y2),
-                new Point(x2, y1),
-                new Point(x3, y2)
-            };
-        }
-
-        private static Point[] GetDownArrowPolygon(Rectangle prect)
-        {
-            int h = prect.Bottom - prect.Top;
-            int w = prect.Right - prect.Left;
-            int arrowHeight = (int)Math.Ceiling(0.25f * h);
-            int arrowWidth = 2 * arrowHeight;
-            int arrowLeft = prect.Left + ((w - arrowWidth) / 2);
-            int arrowTop = prect.Top + ((h - arrowHeight) / 2);
+            int arrowLeft = prect.Left + ((prect.Width - arrowWidth) / 2);
+            int arrowTop = prect.Top + ((prect.Height - arrowHeight) / 2);
             int x1 = arrowLeft;
-            int x2 = arrowLeft + (int)Math.Floor(0.5f * arrowWidth);
+            int x2 = arrowLeft + (arrowWidth / 2);
             int x3 = arrowLeft + arrowWidth;
             int y1 = arrowTop;
             int y2 = arrowTop + arrowHeight;
-            return new[]
-            {
-                new Point(x1, y1),
-                new Point(x2, y2),
-                new Point(x3, y1)
-            };
+            return down
+                ? new[]
+                {
+                    new Point(x1, y1),
+                    new Point(x2, y2),
+                    new Point(x3, y1)
+                }
+                : new[]
+                {
+                    new Point(x1, y2),
+                    new Point(x2, y1),
+                    new Point(x3, y2)
+                };
         }
 
         private enum Parts

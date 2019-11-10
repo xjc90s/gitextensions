@@ -125,6 +125,7 @@ namespace GitUI.Editor
             ToggleNonPrintingChars(AppSettings.ShowNonPrintingChars);
 
             ShowSyntaxHighlightingInDiff = AppSettings.ShowSyntaxHighlightingInDiff;
+            showSyntaxHighlighting.Image = Resources.SyntaxHighlighting.AdaptLightness();
             showSyntaxHighlighting.Checked = ShowSyntaxHighlightingInDiff;
 
             IsReadOnly = true;

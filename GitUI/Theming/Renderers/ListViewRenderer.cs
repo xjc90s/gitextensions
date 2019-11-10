@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using GitExtUtils.GitUI;
 using GitExtUtils.GitUI.Theming;
 
 namespace GitUI.Theming
@@ -8,19 +9,19 @@ namespace GitUI.Theming
     {
         protected override string Clsid { get; } = "Listview";
 
-        public override int RenderText(
-            IntPtr htheme,
+        public override int RenderTextEx(IntPtr htheme,
             IntPtr hdc,
             int partid, int stateid,
             string psztext, int cchtext,
             NativeMethods.DT dwtextflags,
-            ref NativeMethods.RECT prect, ref NativeMethods.DTTOPTS poptions)
+            NativeMethods.RECT prect, ref NativeMethods.DTTOPTS poptions)
         {
             switch ((Parts)partid)
             {
                 case Parts.LVP_GROUPHEADER:
                 {
-                    NativeMethods.GetThemeColor(htheme, partid, stateid, poptions.iColorPropId, out var crefText);
+                    NativeMethods.GetThemeColor(htheme, partid, stateid, poptions.iColorPropId,
+                        out var crefText);
                     var color = crefText.ToColor();
                     var adaptedColor = color.AdaptTextColor();
 
@@ -32,6 +33,122 @@ namespace GitUI.Theming
             }
 
             return 1;
+        }
+
+        public override int RenderBackground(IntPtr hdc, int partid, int stateid, Rectangle prect,
+            ref NativeMethods.RECT pcliprect)
+        {
+            switch ((Parts)partid)
+            {
+                case Parts.LVP_GROUPHEADERLINE:
+                {
+                    using (var g = Graphics.FromHdcInternal(hdc))
+                    {
+                        int y = prect.Top + (prect.Height / 2);
+                        g.DrawLine(SystemPens.Highlight, prect.Left, y, prect.Right - 1, y);
+                    }
+
+                    return 0;
+                }
+
+                case Parts.LVP_EXPANDBUTTON:
+                {
+                    Brush backBrush;
+                    Color foreColor;
+                    switch ((State.ExpandButton)stateid)
+                    {
+                        case State.ExpandButton.LVEB_HOVER:
+                            backBrush = SystemBrushes.HotTrack;
+                            foreColor = SystemColors.ControlLightLight;
+                            break;
+
+                        case State.ExpandButton.LVEB_PUSHED:
+                            backBrush = SystemBrushes.Highlight;
+                            foreColor = SystemColors.ControlLightLight;
+                            break;
+
+                        // case State.ExpandButton.LVEB_NORMAL:
+                        default:
+                            backBrush = null;
+                            foreColor = SystemColors.HotTrack;
+                            break;
+                    }
+
+                    RenderArrow(hdc, prect, backBrush, foreColor, true);
+                    return 0;
+                }
+
+                case Parts.LVP_COLLAPSEBUTTON:
+                {
+                    Brush backBrush;
+                    Color foreColor;
+                    switch ((State.CollapseButton)stateid)
+                    {
+                        case State.CollapseButton.LVCB_HOVER:
+                            backBrush = SystemBrushes.HotTrack;
+                            foreColor = SystemColors.ControlLightLight;
+                            break;
+
+                        case State.CollapseButton.LVCB_PUSHED:
+                            backBrush = SystemBrushes.Highlight;
+                            foreColor = SystemColors.ControlLightLight;
+                            break;
+
+                        // case State.CollapseButton.LVCB_NORMAL:
+                        default:
+                            backBrush = null;
+                            foreColor = SystemColors.HotTrack;
+                            break;
+                    }
+
+                    RenderArrow(hdc, prect, backBrush, foreColor, false);
+                    return 0;
+                }
+            }
+
+            return 1;
+        }
+
+        private static void RenderArrow(IntPtr hdc, Rectangle prect, Brush backBrush,
+            Color foreColor, bool down)
+        {
+            int h = prect.Height / 4;
+            int w = h * 2;
+
+            int x1 = prect.Left + ((prect.Width - w) / 2);
+            int x2 = x1 + (w / 2);
+            int x3 = x1 + w;
+
+            int y1 = prect.Top + ((prect.Height - h) / 2);
+            int y2 = y1 + h;
+
+            var arrowPoints = down
+                ? new[]
+                {
+                    new Point(x1, y1),
+                    new Point(x2, y2),
+                    new Point(x3, y1)
+                }
+                : new[]
+                {
+                    new Point(x1, y2),
+                    new Point(x2, y1),
+                    new Point(x3, y2)
+                };
+
+            using (var g = Graphics.FromHdcInternal(hdc))
+            using (new HighQualityScope(g))
+            {
+                if (backBrush != null)
+                {
+                    g.FillEllipse(backBrush, prect.Inclusive());
+                }
+
+                using (var forePen = new Pen(foreColor, DpiUtil.Scale(2)))
+                {
+                    g.DrawLines(forePen, arrowPoints);
+                }
+            }
         }
 
         private enum Parts

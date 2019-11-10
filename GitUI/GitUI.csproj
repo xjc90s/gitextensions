@@ -134,8 +134,11 @@
     </Compile>
     <Compile Include="BuildServerIntegration\BuildServerWatcher.cs" />
     <Compile Include="Theming\PathExtension.cs" />
+    <Compile Include="Theming\Renderers\ButtonRenderer.cs" />
+    <Compile Include="Theming\Renderers\ComboBoxRenderer.cs" />
     <Compile Include="Theming\Renderers\EditRenderer.cs" />
     <Compile Include="Theming\Renderers\HeaderRenderer.cs" />
+    <Compile Include="Theming\Renderers\HighQualityScope.cs" />
     <Compile Include="Theming\Renderers\ThemeRenderer.cs" />
     <Compile Include="Theming\Renderers\ListViewRenderer.cs" />
     <Compile Include="Theming\Renderers\RectangleExtension.cs" />

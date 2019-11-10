@@ -15,18 +15,31 @@ namespace GitUI.Theming
 
         protected abstract string Clsid { get; }
 
-        public virtual int RenderBackground(IntPtr hdc, int partid, int stateid, Rectangle prect)
+        public virtual bool ForceUseRenderTextEx => false;
+
+        public virtual int RenderBackground(IntPtr hdc, int partid, int stateid, Rectangle prect,
+            ref NativeMethods.RECT pcliprect)
         {
             return 1;
         }
 
-        public virtual int RenderText(
-            IntPtr htheme,
+        public virtual int RenderText(IntPtr htheme,
             IntPtr hdc,
             int partid, int stateid,
             string psztext, int cchtext,
             NativeMethods.DT dwtextflags,
-            ref NativeMethods.RECT prect, ref NativeMethods.DTTOPTS poptions)
+            int dwtextflags2,
+            NativeMethods.RECT prect)
+        {
+            return 1;
+        }
+
+        public virtual int RenderTextEx(IntPtr htheme,
+            IntPtr hdc,
+            int partid, int stateid,
+            string psztext, int cchtext,
+            NativeMethods.DT dwtextflags,
+            NativeMethods.RECT prect, ref NativeMethods.DTTOPTS poptions)
         {
             return 1;
         }
@@ -37,8 +50,17 @@ namespace GitUI.Theming
             return 1;
         }
 
-        public void AddThemeData(IntPtr hwnd) =>
-            _themeDataHandles.Add(NativeMethods.OpenThemeData(hwnd, Clsid));
+        /// <summary>
+        /// By using this method we find which theme data handle corresponds to a given CLSID e.g.
+        /// "SCROLLBAR". The result depends on window class, e.g. ListView or NativeListView will
+        /// have different theme data.
+        /// </summary>
+        /// <param name="hwnd">win32 window handle</param>
+        public void AddThemeData(IntPtr hwnd)
+        {
+            var htheme = NativeMethods.OpenThemeData(hwnd, Clsid);
+            _themeDataHandles.Add(htheme);
+        }
 
         public bool Supports(IntPtr htheme) =>
             _themeDataHandles.Contains(htheme);

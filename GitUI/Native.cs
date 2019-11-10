@@ -146,8 +146,8 @@ namespace GitUI
             StateID = 1 << 8,
             CalcRect = 1 << 9,
             ApplyOverlay = 1 << 10,
-            GlowSize = 2048,
-            Callback = 4096,
+            GlowSize = 1 << 11,
+            Callback = 1 << 12,
             Composited = 1 << 13
         }
 
