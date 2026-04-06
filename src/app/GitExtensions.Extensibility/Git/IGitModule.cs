@@ -236,6 +236,7 @@ public interface IGitModule
     Task<Patch?> GetCurrentChangesAsync(string? fileName, string? oldFileName, bool staged, string extraDiffArguments, Encoding? encoding = null, bool noLocks = false);
     Task<string?> GetFileContentsAsync(GitItemStatus file);
     IReadOnlyList<GitStash> GetStashes(bool noLocks);
+    IReadOnlyList<GitWorktree> GetWorktrees();
     IReadOnlyList<GitItemStatus> GetWorkTreeFiles();
     bool ResetAllChanges(bool clean, bool onlyWorkTree = false);
 
