@@ -9,30 +9,30 @@ namespace GitUITests;
 public class ControlThreadingExtensionsTests
 {
     [Test]
-    public void ControlSwitchToMainThreadOnMainThread()
+    public async Task ControlSwitchToMainThreadOnMainThread()
     {
-        Form form = new();
+        using Form form = new();
 
-        ThreadHelper.JoinableTaskFactory.Run(async () =>
-        {
-            ThreadHelper.JoinableTaskContext.IsOnMainThread.Should().BeTrue();
-            await form.SwitchToMainThreadAsync();
-            ThreadHelper.JoinableTaskContext.IsOnMainThread.Should().BeTrue();
-        });
+        ThreadHelper.JoinableTaskContext.IsOnMainThread.Should().BeTrue();
+        await form.SwitchToMainThreadAsync();
+        ThreadHelper.JoinableTaskContext.IsOnMainThread.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task ControlSwitchToMainThreadOnMainThread_with_cancellation_token()
+    {
+        using Form form = new();
 
         using CancellationTokenSource cancellationTokenSource = new();
-        ThreadHelper.JoinableTaskFactory.Run(async () =>
-        {
-            ThreadHelper.JoinableTaskContext.IsOnMainThread.Should().BeTrue();
-            await form.SwitchToMainThreadAsync(cancellationTokenSource.Token);
-            ThreadHelper.JoinableTaskContext.IsOnMainThread.Should().BeTrue();
-        });
+        ThreadHelper.JoinableTaskContext.IsOnMainThread.Should().BeTrue();
+        await form.SwitchToMainThreadAsync(cancellationTokenSource.Token);
+        ThreadHelper.JoinableTaskContext.IsOnMainThread.Should().BeTrue();
     }
 
     [Test]
     public void ControlSwitchToMainThreadOnMainThreadCompletesSynchronously()
     {
-        Form form = new();
+        using Form form = new();
 
         ThreadHelper.JoinableTaskContext.IsOnMainThread.Should().BeTrue();
 
@@ -51,26 +51,26 @@ public class ControlThreadingExtensionsTests
     }
 
     [Test]
-    public void ControlSwitchToMainThreadOnBackgroundThread()
+    public async Task ControlSwitchToMainThreadOnBackgroundThread()
     {
-        Form form = new();
+        using Form form = new();
 
-        ThreadHelper.JoinableTaskFactory.Run(async () =>
-        {
-            await TaskScheduler.Default;
-            ThreadHelper.JoinableTaskContext.IsOnMainThread.Should().BeFalse();
-            await form.SwitchToMainThreadAsync();
-            ThreadHelper.JoinableTaskContext.IsOnMainThread.Should().BeTrue();
-        });
+        await TaskScheduler.Default;
+        ThreadHelper.JoinableTaskContext.IsOnMainThread.Should().BeFalse();
+        await form.SwitchToMainThreadAsync();
+        ThreadHelper.JoinableTaskContext.IsOnMainThread.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task ControlSwitchToMainThreadOnBackgroundThread_with_cancellation_token()
+    {
+        using Form form = new();
 
         using CancellationTokenSource cancellationTokenSource = new();
-        ThreadHelper.JoinableTaskFactory.Run(async () =>
-        {
-            await TaskScheduler.Default;
-            ThreadHelper.JoinableTaskContext.IsOnMainThread.Should().BeFalse();
-            await form.SwitchToMainThreadAsync(cancellationTokenSource.Token);
-            ThreadHelper.JoinableTaskContext.IsOnMainThread.Should().BeTrue();
-        });
+        await TaskScheduler.Default;
+        ThreadHelper.JoinableTaskContext.IsOnMainThread.Should().BeFalse();
+        await form.SwitchToMainThreadAsync(cancellationTokenSource.Token);
+        ThreadHelper.JoinableTaskContext.IsOnMainThread.Should().BeTrue();
     }
 
     [Test]
@@ -87,7 +87,7 @@ public class ControlThreadingExtensionsTests
     [Test]
     public async Task TokenCancelledBeforeSwitchOnMainThread()
     {
-        Form form = new();
+        using Form form = new();
         using CancellationTokenSource cancellationTokenSource = new();
         await cancellationTokenSource.CancelAsync();
 
@@ -129,7 +129,7 @@ public class ControlThreadingExtensionsTests
     [Test]
     public async Task TokenCancelledAfterSwitchOnMainThread()
     {
-        Form form = new();
+        using Form form = new();
         using CancellationTokenSource cancellationTokenSource = new();
 
         ControlThreadingExtensions.ControlMainThreadAwaitable awaitable = form.SwitchToMainThreadAsync(cancellationTokenSource.Token);
@@ -157,7 +157,7 @@ public class ControlThreadingExtensionsTests
     [Test]
     public async Task TokenCancelledBeforeSwitchOnBackgroundThread()
     {
-        Form form = new();
+        using Form form = new();
 
         await TaskScheduler.Default;
 
@@ -192,7 +192,7 @@ public class ControlThreadingExtensionsTests
     [Test]
     public async Task TokenCancelledAfterSwitchOnBackgroundThread()
     {
-        Form form = new();
+        using Form form = new();
 
         await TaskScheduler.Default;
 
