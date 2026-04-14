@@ -90,7 +90,7 @@ public class LocalBranchContextMenuProviderTests
 
         menu.Items.Cast<ToolStripItem>()
             .Where(i => i is not ToolStripSeparator)
-            .Select(i => i.Text)
+            .Select(i => i.Text?.Replace("&", ""))
             .Should().Contain(t => t.Contains("Checkout"));
     }
 
@@ -193,7 +193,7 @@ public class LocalBranchContextMenuProviderTests
 
         menu.Items.Cast<ToolStripItem>()
             .Where(i => i is not ToolStripSeparator)
-            .Select(i => i.Text)
+            .Select(i => i.Text?.Replace("&", ""))
             .Should().Contain(t => t.Contains("Push"));
     }
 
