@@ -3497,6 +3497,10 @@ Focus the output history and (when displayed as panel) toggle its visibility usi
         <source>General</source>
         <target />
       </trans-unit>
+      <trans-unit id="lblConsoleEmulatorChoice.Text">
+        <source>Console emulator</source>
+        <target />
+      </trans-unit>
       <trans-unit id="lblDefaultShell.Text">
         <source>Default shell</source>
         <target />
